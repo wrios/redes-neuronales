@@ -155,11 +155,23 @@ def entrenamiento(M):
 	return M	
 
 
+def graficar(M):
+	colours = ["b","g","r","c","m","y","k","w", "#D8BFD8"]
+	fig = pylab.figure()
+	ax = Axes3D(fig)
+	e_actual = 0
+	for row in M:
+		for elem in row:
+			ax.scatter(elem,color = colours[e_actual/4],marker = 'x')
+		e_actual += 1	
+	plt.show()	
 
 def main():
+
+
 	global TotalEpoca
 #numero total de epocas
-	TotalEpoca = 500
+	TotalEpoca = 2
 #numero de espocas total
 	n = 2500
 #Crea la matriz con las neuronas 	
@@ -173,8 +185,20 @@ def main():
 #devuelve una epoca(una pasada por el dataset)
 	E = epoca(n,M)	
 #entrenamiento
-	print entrenamiento(M)	
-			
+	En = entrenamiento(M)	
+#plot del entrenamiento
+	graficar(M)
+#	print 'grafico'
+#	for i in range(0,len(En)):
+#		plt.plot(En[i])
+
+#	plt.show()
+
+	#for i in range(0,len(En)):
+	#	for j in range(0,len(En)):
+	#		pyplot.plot(i,j)
+
+
 	#print de la neurona [0][0]
 	#print type(correccion(V,M,Y,n)[0][0])
 
