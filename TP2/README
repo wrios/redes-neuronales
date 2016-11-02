@@ -1,0 +1,11 @@
+README
+
+Se necesitan las siguientes bibliotecas para funcionar:
+matplotlib
+numpy
+pylab
+y probablemente alguna mas...
+
+Instrucciones:
+Python programa -h para instrucciones sobre parametros.
+Algunos parametros se cambian directo en el codigo (el Total de iteraciones de entrenamiento).
