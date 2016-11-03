@@ -2,114 +2,83 @@ import csv
 import sys
 import getopt
 import numpy as np
+from numpy import linalg as LA 
 
-#variables con el tamanio de las capas intermedias.
-m = 13
-l = 5
-lr = 0.15
+m = 7
+lr = 0.25
+W = [np.random.uniform( -0.1, 0.1, (11,m)), np.random.uniform( -0.1, 0.1, (m+1,1))]
 
-#Dim(deltaW[0]) = 
-W = [np.random.rand(10, m), np.random.rand(m, l), np.random.rand(l, 1)]
-deltaW = [np.zeros((10, m)), np.zeros((m, l)), np.zeros((l, 1))]
-umbrales = [np.random.rand(1,m), np.random.rand(1, l), np.random.rand(1, 1)]
-#La ultima fila de deltaW tiene que ser siempre 0's
-
-Y = [np.zeros((11,1)), np.zeros((m+1,1)), np.zeros((l+1,1)), np.zeros((1,1))]
-
-X = np.zeros((10,1))
-
-def normalizar():
-	global X
-	X[0] = (X[0] - 18556.3594594595) / 4445.9064834242
-	X[1] = (X[1] - 21288.2324324324) / 6164.3937442774
-	X[2] = (X[2] - 113925.113513514) / 28603.5114501387
-	X[3] = (X[3] - 828266.510810811) / 389121.133315752
-	X[4] = (X[4] - 1789.2648648649) / 481.6933044966
-	X[5] = (X[5] - 1881.4783783784) / 609.3791254842
-	X[6] = (X[6] - 3667.8054054054) / 1409.4645274337
-	X[7] = (X[7] - 4574.2432432433) / 2040.155060359
-	X[8] = (X[8] - 734.4297297297) / 262.3439058088
-	X[9] = (X[9] - 1555.4054054054) / 613.1253350794
+def normalizar(row):
+	X = (-1)*np.ones((11,1))
+	X[0] = (row[0] - 18556.3594594595) / 4445.9064834242
+	X[1] = (row[1] - 21288.2324324324) / 6164.3937442774
+	X[2] = (row[2] - 113925.113513514) / 28603.5114501387
+	X[3] = (row[3] - 828266.510810811) / 389121.133315752
+	X[4] = (row[4] - 1789.2648648649) / 481.6933044966
+	X[5] = (row[5] - 1881.4783783784) / 609.3791254842
+	X[6] = (row[6] - 3667.8054054054) / 1409.4645274337
+	X[7] = (row[7] - 4574.2432432433) / 2040.155060359
+	X[8] = (row[8] - 734.4297297297) / 262.3439058088
+	X[9] = (row[9] - 1555.4054054054) / 613.1253350794
+	#X[:-1] 
+	X = np.asarray(X)
 	return X
 
-# sigmoid function
 def nonlin(x,deriv=False):
     if(deriv==True):
         return x*(1-x)
     return 1/(1+np.exp(-x))
 
-def activation():
-	global Y
-	global X
-	global W
-	#Agrego los umbrales
-	W[0] = np.vstack([W[0], umbrales[0]])
-	W[1] = np.vstack([W[1], umbrales[1]])
-	W[2] = np.vstack([W[2], umbrales[2]])
-	#Le aplico la funcion de activacion a todas las neuronas paso a paso haciendo F(resultado de multiplicacion matricial)
-	Y[0] = np.insert(X, 10,-1)
-  	Y[1] = nonlin(np.dot(Y[0], W[0]))
-  	#arriba Y[1] tiene que tener tamanio m, abajo tiene tamanio m+1
-  	Y[1] = np.insert(Y[1], m, -1)
-  	Y[2] = nonlin(np.dot(Y[1], W[1]))
-  	#arriba Y[2] tiene que tener tamanio l, abajo tiene tamanio l+1
-  	Y[2] = np.insert(Y[2], l, -1)
-  	#Tiene tamanio 1!
-  	Y[3] = np.asmatrix(nonlin(np.dot(Y[2], W[2])))
-  	#Quitar los -1 de las Y
-  	#Tiene que quedar con tamanio 10
-	Y[0] = np.asmatrix(np.delete(Y[0], 10, -1))
-    #Tiene que quedar con tamanio m
-  	Y[1] = np.asmatrix(np.delete(Y[1], m, -1))
-  	#Tiene que quedar con tamanio l
-  	Y[2] = np.asmatrix(np.delete(Y[2], l , -1))
-	#Borramos las filas l y m que tiene los umbrales
-	W[0] = np.delete(W[0], (10), axis = 0)
-	W[1] = np.delete(W[1], (m), axis = 0)
-	W[2] = np.delete(W[2], (l), axis = 0)
-  	return Y
+def activation(X,W):	
+	K = []
+	K.append(X[:-1])
+	Y = (-1)*np.ones((m+1,1))
+	Y[:-1] = nonlin(np.dot(X.T,W[0]).T)
+	K.append(Y[:-1])
+	Y2 = nonlin(np.dot(Y.T,W[1]))
+	K.append(Y2)
+#devuelve la lista con las salidas (sin el menos uno )	
+	return K
 
-def correction(esperado):
-	global Y
-	global deltaW
-	global W
-	#Diferencia entre el resultado obtenido y el esperado	
-	E = Y[3] - esperado
-	#Se usa el modulo y se lo eleva al cuadrado, porque el error cuadratico medio es buen indicador	
-	e = np.power(np.absolute(E),2)
-	for j in range(3, 0,-1):
-		D = E * np.dot(Y[j].T,(1-Y[j])) #nonlin( np.dot(Y[j-1], W[j]), True) # Y[j](1-Y[j])
-		deltaW[j-1] = deltaW[j-1] + lr * Y[j-1].T * D
+def correction(Y,esperado):
+#salida menos lo esperado
+	delta2 = esperado - Y[2]
+	delta1 = W[1][:-1] * delta2
+	dW[1] = dW[1] - lr*np.dot(Y[1],(nonlin(Y[2].T,True)*delta2).T)
+	dW[0] = dW[0] - lr*np.dot(Y[0],(nonlin(Y[1],True)*delta1).T)
+	E = np.dot((nonlin(Y[1],True)*delta1).T,W[0][:-1].T)
+	e = np.linalg.norm(np.absolute(E),2)
 	return e
 
-def adaptation():
-	global W
-	global deltaW
-	for j in range(1, 3):
-		W[j] = W[j] + deltaW[j]
-	deltaW = [np.zeros((10, m)), np.zeros((m, l)), np.zeros((l, 1))]
-	return deltaW
+
+
+def adaptation(W):
+	for j in range(0,2):
+		W[j][:-1] = W[j][:-1] + dW[j]
+
+
 
 def batch():
 	global W
-	global deltaW
+	global dW
 	global X
 	global Y
 	e = 0
-	with open(sys.argv[1], 'rb') as csvfile:
-		dataset = csv.reader(csvfile, delimiter=',', quotechar='\'')
-		for row in dataset:
+	dW = [np.zeros((10, m)), np.zeros((m, 1))]
+	reader = csv.reader(open('/home/kennedy/TP2-master/RNA_TP1_datasets/tp1_ej1_training.csv','rb')) 	
+	for row in reader:
 #print ', '.join(row)
 #Calculo de la diferencia entre el valor output y el esperado
-			if row[0] == "B":
-				esperado = 1
-			else:
-				esperado = 0
-			X = [float(row[1]), float(row[2]), float(row[3]), float(row[4]), float(row[5]), float(row[6]), float(row[7]), float(row[8]), float(row[9]), float(row[10])]
-			normalizar()
-			activation()
-			e = e + correction(esperado)
-	adaptation()
+		if row[0] == "B":
+			esperado = 1
+		else:
+			esperado = 0
+			#print np.shape(row)
+		X = [float(row[1]), float(row[2]), float(row[3]), float(row[4]), float(row[5]), float(row[6]), float(row[7]), float(row[8]), float(row[9]), float(row[10])]
+		N =	normalizar(X)
+		A = activation(N,W) # devuelve una lista con los resultados
+		e = correction(A,esperado)
+	adaptation(W)
 	return e
 
 def interpretar():
@@ -123,27 +92,26 @@ def interpretar():
 	return diagnostico
 
 
-def main():
+def main():	
+	cota = 0.000001
+	T = 2000
+	e = 1
+	t = 1
 
-
-
-	#Sin entrenar
-	X = [11779, 29321, 93649, 1300312, 2469, 1071, 4459, 6299, 586, 1506]
-	normalizar()
-	activation()
-	print interpretar()
-	
+	while e > cota and t < T:
+		e = batch()
+		t = t + 1
+		print t,e
+	return e,t	
 	#Entrenamiento
-	n = 0
-	error = 1
-	while error >= 0.15 or n <= 1000:
-		error = batch()
+#	n = 0
+#	error = 1
+#	while error >= 0.15 or n <= 10:
+#		error = batch()
 	
-	#Post Entrenamiento
-	X = [11779, 29321, 93649, 1300312, 2469, 1071, 4459, 6299, 586, 1506]
-	normalizar()
-	activation()
-	print interpretar()
+#	normalizar()
+#	activation()
+	#print interpretar()
 
 if __name__ == "__main__":
     main()
