@@ -4,9 +4,12 @@ import getopt
 import numpy as np
 from numpy import linalg as LA 
 
+cota = 0.000001
+T = 2000
 m = 7
-lr = 0.25
 W = [np.random.uniform( -0.1, 0.1, (11,m)), np.random.uniform( -0.1, 0.1, (m+1,1))]
+esperados = []
+resultados = []
 
 def normalizar(row):
 	X = (-1)*np.ones((11,1))
@@ -20,7 +23,6 @@ def normalizar(row):
 	X[7] = (row[7] - 4574.2432432433) / 2040.155060359
 	X[8] = (row[8] - 734.4297297297) / 262.3439058088
 	X[9] = (row[9] - 1555.4054054054) / 613.1253350794
-	#X[:-1] 
 	X = np.asarray(X)
 	return X
 
@@ -40,78 +42,108 @@ def activation(X,W):
 #devuelve la lista con las salidas (sin el menos uno )	
 	return K
 
-def correction(Y,esperado):
+def correction(Y,esperado, n):
+	global W
+	global dW
 #salida menos lo esperado
 	delta2 = esperado - Y[2]
 	delta1 = W[1][:-1] * delta2
-	dW[1] = dW[1] - lr*np.dot(Y[1],(nonlin(Y[2].T,True)*delta2).T)
-	dW[0] = dW[0] - lr*np.dot(Y[0],(nonlin(Y[1],True)*delta1).T)
+	dW[1] = dW[1] - learningRate(n)*np.dot(Y[1],(nonlin(Y[2].T,True)*delta2).T)
+	dW[0] = dW[0] - learningRate(n)*np.dot(Y[0],(nonlin(Y[1],True)*delta1).T)
 	E = np.dot((nonlin(Y[1],True)*delta1).T,W[0][:-1].T)
 	e = np.linalg.norm(np.absolute(E),2)
 	return e
-
-
 
 def adaptation(W):
 	for j in range(0,2):
 		W[j][:-1] = W[j][:-1] + dW[j]
 
+def progress(count, total, suffix=''):
+    bar_len = 60
+    filled_len = int(round(bar_len * count / float(total)))
+    percents = round(100.0 * count / float(total), 1)
+    bar = '=' * filled_len + '-' * (bar_len - filled_len)
+    sys.stdout.write('[%s] %s%s ...%s\r' % (bar, percents, '%', suffix))
+    sys.stdout.flush()  # As suggested by Rom Ruben
 
-
-def batch():
+def batch(n):
 	global W
 	global dW
 	global X
 	global Y
 	e = 0
 	dW = [np.zeros((10, m)), np.zeros((m, 1))]
-	reader = csv.reader(open('/home/kennedy/TP2-master/RNA_TP1_datasets/tp1_ej1_training.csv','rb')) 	
+	reader = csv.reader(open('RNA_TP1_datasets/tp1_ej1_training.csv','rb')) 	
 	for row in reader:
-#print ', '.join(row)
 #Calculo de la diferencia entre el valor output y el esperado
 		if row[0] == "B":
 			esperado = 1
 		else:
 			esperado = 0
-			#print np.shape(row)
 		X = [float(row[1]), float(row[2]), float(row[3]), float(row[4]), float(row[5]), float(row[6]), float(row[7]), float(row[8]), float(row[9]), float(row[10])]
 		N =	normalizar(X)
 		A = activation(N,W) # devuelve una lista con los resultados
-		e = correction(A,esperado)
+		e = correction(A,esperado, n)
 	adaptation(W)
 	return e
 
-def interpretar():
-	global Y
+def interpretar(Y):
 #interpretacion del resultado en letras
-	if (Y[3] > 0.5):
+	if (Y[2] > 0.5):
 		diagnostico = "B"
 	else:
 		diagnostico = "M"
-	
 	return diagnostico
 
-
-def main():	
-	cota = 0.000001
-	T = 2000
-	e = 1
+def entrenamiento():
 	t = 1
-
+	e = 1
 	while e > cota and t < T:
-		e = batch()
+		e = batch(t)
+		progress(t, T, 'e: '+str(e))
 		t = t + 1
-		print t,e
-	return e,t	
-	#Entrenamiento
-#	n = 0
-#	error = 1
-#	while error >= 0.15 or n <= 10:
-#		error = batch()
-	
-#	normalizar()
-#	activation()
-	#print interpretar()
+	return e,t
+
+def cicloCompleto():
+	global W
+	global X
+	global esperados
+	global resultados
+	esperados = []
+	resultados = []
+	reader = csv.reader(open('RNA_TP1_datasets/tp1_ej1_training.csv','rb')) 	
+	for row in reader:
+		X = [float(row[1]), float(row[2]), float(row[3]), float(row[4]), float(row[5]), float(row[6]), float(row[7]), float(row[8]), float(row[9]), float(row[10])]
+		N =	normalizar(X)
+		A = activation(N,W) # devuelve una lista con los resultados
+		esperados.append(row[0])
+		resultados.append(interpretar(A))
+	return esperados, resultados
+
+def precision(esperados, resultados):
+	correctos = 0
+	totales = 0
+	for i in xrange(0,len(esperados)):
+		if esperados[i] == resultados[i]:
+			correctos += 1
+		totales += 1
+	print 'Total: ', totales, ' Correctos: ', correctos
+	return totales, correctos
+
+def learningRate(n):
+	lr = 1/(np.exp(n))
+	return lr
+
+def main():
+	print 'Pre entrenamiento'
+	esperados, resultados = cicloCompleto()
+	precision(esperados, resultados)
+	print 'Comienza Entrenamiento'
+	entrenamiento()
+	print 'Finaliza Entrenamiento'
+	print 'Post entrenamiento'
+	esperados, resultados = cicloCompleto()
+	precision(esperados, resultados)
 
 if __name__ == "__main__":
     main()

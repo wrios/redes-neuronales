@@ -96,8 +96,7 @@ def entrenamiento():
 	while s > umbral and n < TotalEpoca:
 		s = epoca(n)
 		n += 1
-		print "epoca: ", n
-		print "s: ", s
+		progress(n, TotalEpoca, "s: " + s)
 
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
@@ -166,6 +165,13 @@ def graficarMatriz(confMatrix):
 	#plt.savefig(archivoSalida +'.jpg')
 	plt.close()
 
+def progress(count, total, suffix=''):
+    bar_len = 60
+    filled_len = int(round(bar_len * count / float(total)))
+    percents = round(100.0 * count / float(total), 1)
+    bar = '=' * filled_len + '-' * (bar_len - filled_len)
+    sys.stdout.write('[%s] %s%s ...%s\r' % (bar, percents, '%', suffix))
+    sys.stdout.flush()  # As suggested by Rom Ruben
 
 def guardarEntrenamiento():
 	outfile = open('entrenamiento_'+in_metodo+'_'+str(TotalEpoca)+'_'+str(in_inicio_validacion)+'_'+str(in_fin_validacion), 'w')
