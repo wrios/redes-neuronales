@@ -6,7 +6,8 @@ from numpy import linalg as LA
 
 cota = 0.000001
 T = 2000
-m = 10
+m = 30
+Y = [np.random.uniform( -0.1, 0.1, (11,1)), np.random.uniform( -0.1, 0.1, (m+1,1)), np.random.uniform(-0.1, 0.1, (1,1))]
 W = [np.random.uniform( -0.1, 0.1, (11,m)), np.random.uniform( -0.1, 0.1, (m+1,1))]
 dW = [np.zeros((11, m)), np.zeros((m+1, 1))]
 esperados = []
@@ -44,39 +45,41 @@ def normalizar(row):
 
 def nonlin(x,deriv=False):
     if(deriv==True):
+    	#print x
         return 1-(x*x)
     return np.tanh(x)
 
 def activation(X,W):
 	global Y
-	X = X.reshape((11,1))
-	K = []
-	K.append(X[:-1])
-	Y = (-1)*np.ones((m+1,1))
-	Y[:-1] = nonlin(np.dot(X.T,W[0]).T)
-	K.append(Y)
-	Y2 = nonlin(np.dot(Y.T,W[1]))
-	K.append(Y2)
-#devuelve la lista con las salidas (sin el menos uno )	
-	return K
+	Y = []
+	Y.append(X.reshape(11,1))
+	temp = (-1)*np.ones((m+1, 1))
+	temp[:-1] = np.dot(Y[0].T, W[0]).T
+	Y.append(nonlin(temp))
+	Y.append(nonlin(np.dot(Y[1].T, W[1])))
+	return Y
 
-def correction(Y,esperado, n):
-	global W
+def correction(Y,Z,n):
 	global dW
+	E_2 = Z - Y[2]
 #salida menos lo esperado
-	delta2 = nonlin(Y[2].T,True)*(esperado - Y[2])
-	print delta2.shape
-	delta1 = nonlin(Y[1],True)*(np.dot(delta2, W[1].T).T[:-1])
-	print delta1.shape
+	delta2 = nonlin(Y[2],True)*E_2
+	#print np.dot(delta2.T, W[1].T).shape
+	#print 'Y[1]: ', Y[1]
+	delta1 = (nonlin(Y[1],True)*(np.dot(delta2.T, W[1].T).T))[:-1]	
+	#print 'delta1.shape: ', delta1.shape
+	#print 'Y[1].shape: ', Y[1].shape
 	dW[1] = learningRate(n)*np.dot(Y[1],delta2.T)
+	#print 'Y[0].shape: ', Y[0].shape
+	#print 'dW[1].shape: ', dW[1].shape
 	dW[0] = learningRate(n)*np.dot(Y[0],delta1.T)
-	E = esperado - Y[2]
-	e = np.linalg.norm(E,2)
+	#print 'dW[0].shape: ', dW[0].shape
+	e = np.linalg.norm(E_2,2)
 	return e
 
 def adaptation(W):
 	for j in range(0,2):
-		print W[j].shape, dW[j].shape
+		#print W[j].shape, dW[j].shape
 		W[j] += dW[j]
 
 def progress(count, total, suffix=''):
@@ -146,7 +149,7 @@ def cicloCompleto():
 		A = activation(N,W) # devuelve una lista con los resultados
 		esperados.append(row[0])
 		resultados.append(interpretar(A))
-		print 'resultado:', row[0], ' resultado ', interpretar(A), A[2]#interpretar(A)
+		#print 'resultado:', row[0], ' resultado ', interpretar(A), A[2]#interpretar(A)
 	return esperados, resultados
 
 def precision(esperados, resultados):
@@ -160,7 +163,7 @@ def precision(esperados, resultados):
 	return totales, correctos
 
 def learningRate(n):
-	lr = 0.01 #1/(np.exp(n))
+	lr = 0.1 #1/(np.exp(n))
 	return lr
 
 def main():
@@ -169,14 +172,14 @@ def main():
 	levantarYNormalizar()
 	print 'Termina de normalizar'
 	print 'Pre entrenamiento'
-	#esperados, resultados = cicloCompleto()
-	#precision(esperados, resultados)
+	esperados, resultados = cicloCompleto()
+	precision(esperados, resultados)
 	print 'Comienza Entrenamiento'
 	entrenamiento()
 	print 'Finaliza Entrenamiento'
 	print 'Post entrenamiento'
-	#esperados, resultados = cicloCompleto()
-	#precision(esperados, resultados)
+	esperados, resultados = cicloCompleto()
+	precision(esperados, resultados)
 
 if __name__ == "__main__":
     main()
