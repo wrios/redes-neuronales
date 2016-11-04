@@ -5,8 +5,9 @@ import numpy as np
 from numpy import linalg as LA 
 
 cota = 0.000001
-T = 2000
+T = 3000
 m = 30
+lr = 0.1
 Y = [np.random.uniform( -0.1, 0.1, (11,1)), np.random.uniform( -0.1, 0.1, (m+1,1)), np.random.uniform(-0.1, 0.1, (1,1))]
 W = [np.random.uniform( -0.1, 0.1, (11,m)), np.random.uniform( -0.1, 0.1, (m+1,1))]
 dW = [np.zeros((11, m)), np.zeros((m+1, 1))]
@@ -59,7 +60,7 @@ def activation(X,W):
 	Y.append(nonlin(np.dot(Y[1].T, W[1])))
 	return Y
 
-def correction(Y,Z,n):
+def correction(Y,Z,b=False):
 	global dW
 	E_2 = Z - Y[2]
 #salida menos lo esperado
@@ -69,10 +70,10 @@ def correction(Y,Z,n):
 	delta1 = (nonlin(Y[1],True)*(np.dot(delta2.T, W[1].T).T))[:-1]	
 	#print 'delta1.shape: ', delta1.shape
 	#print 'Y[1].shape: ', Y[1].shape
-	dW[1] = learningRate(n)*np.dot(Y[1],delta2.T)
+	dW[1] = learningRate(b)*np.dot(Y[1],delta2.T)
 	#print 'Y[0].shape: ', Y[0].shape
 	#print 'dW[1].shape: ', dW[1].shape
-	dW[0] = learningRate(n)*np.dot(Y[0],delta1.T)
+	dW[0] = learningRate(b)*np.dot(Y[0],delta1.T)
 	#print 'dW[0].shape: ', dW[0].shape
 	e = np.linalg.norm(E_2,2)
 	return e
@@ -90,7 +91,7 @@ def progress(count, total, suffix=''):
     sys.stdout.write('[%s] %s%s ...%s\r' % (bar, percents, '%', suffix))
     sys.stdout.flush()  # As suggested by Rom Ruben
 
-def incremental(n):
+def incremental(b):
 	global W
 	global dW
 	global X
@@ -104,7 +105,7 @@ def incremental(n):
 		X = row[1:]
 		np.reshape(X, (11,1))
 		A = activation(X,W) # devuelve una lista con los resultados
-		e += correction(A,esperado, n)
+		e += correction(A,esperado, b)
 		adaptation(W)
 	return e
 
@@ -120,17 +121,14 @@ def entrenamiento():
 	t = 1
 	e = 1
 	ePrima = 1
-	ciclosSinCambios = 0
+	agrandarLR = False
 	while e > cota and t < T:
-		e = incremental(t)
-		if ePrima == e:
-			ciclosSinCambios += 1
+		e = incremental(agrandarLR)
+		if e-ePrima < 1:
+			agrandarLR = True
 		else:
 			ePrima = e
-			ciclosSinCambios = 0
-		if ciclosSinCambios > 20:
-			print 'Pasaron 20 ciclos sin cambios en el error	'
-			break
+			agrandarLR = False
 		progress(t, T, 'e: '+str(e))
 		t = t + 1
 	return e,t
@@ -162,8 +160,17 @@ def precision(esperados, resultados):
 	print 'Total: ', totales, ' Correctos: ', correctos
 	return totales, correctos
 
-def learningRate(n):
-	lr = 0.1 #1/(np.exp(n))
+def learningRate(b):
+	global lr
+	if b:
+		#print 'crece ', lr
+		lr += 0.001
+		if lr > 0.1:
+			lr = 0.1
+	else:
+		lr -= lr/2
+		if lr < 0.001:
+			lr = 0.001
 	return lr
 
 def main():
