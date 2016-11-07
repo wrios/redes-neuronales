@@ -8,17 +8,18 @@ from numpy import linalg as LA
 import matplotlib.pylab as plt
 
 in_T = 3000
-in_m = 30
+in_m = 12
 in_lr = 0.1
 lr = in_lr
 cota = 0.000001
 in_inicio_validacion = 0
 in_fin_validacion = 0
+tolerancia = 0.5
 fname = str(in_m)+'_'+str(in_lr)+'_'+str(in_T)
-in_dataset = 'RNA_TP1_datasets/tp1_ej1_training.csv'
-Y = [np.random.uniform( -0.1, 0.1, (11,1)), np.random.uniform( -0.1, 0.1, (in_m+1,1)), np.random.uniform(-0.1, 0.1, (1,2))]
-W = [np.random.uniform( -0.1, 0.1, (11,in_m)), np.random.uniform( -0.1, 0.1, (in_m+1,2))]
-dW = [np.zeros((11, in_m)), np.zeros((in_m+1, 1))]
+in_dataset = 'RNA_TP1_datasets/tp1_ej2_training.csv'
+Y = [np.random.uniform( -0.1, 0.1, (9,1)), np.random.uniform( -0.1, 0.1, (in_m+1,1)), np.random.uniform(-0.1, 0.1, (1,2))]
+W = [np.random.uniform( -0.1, 0.1, (9,in_m)), np.random.uniform( -0.1, 0.1, (in_m+1,2))]
+dW = [np.zeros((9, in_m)), np.zeros((in_m+1, 2))]
 esperados = []
 resultados = []
 datos = []
@@ -27,9 +28,9 @@ def inicializarMatrices():
 	global Y
 	global W
 	global dW
-	Y = [np.random.uniform( -0.1, 0.1, (11,1)), np.random.uniform( -0.1, 0.1, (in_m+1,1)), np.random.uniform(-0.1, 0.1, (1,1))]
-	W = [np.random.uniform( -0.1, 0.1, (11,in_m)), np.random.uniform( -0.1, 0.1, (in_m+1,1))]
-	dW = [np.zeros((11, in_m)), np.zeros((in_m+1, 1))]
+	Y = [np.random.uniform( -0.1, 0.1, (9,1)), np.random.uniform( -0.1, 0.1, (in_m+1,1)), np.random.uniform(-0.1, 0.1, (1,2))]
+	W = [np.random.uniform( -0.1, 0.1, (9,in_m)), np.random.uniform( -0.1, 0.1, (in_m+1,2))]
+	dW = [np.zeros((9, in_m)), np.zeros((in_m+1, 2))]
 
 def guardarEntrenamiento():
 	if not(checkFile('training/'+fname)):
@@ -38,6 +39,12 @@ def guardarEntrenamiento():
 		np.save(outfile, W)
 		outfile.close()
 		print 'Entrenamiento Guardado'
+
+def valorAceptable(x, y):
+	if np.linalg.norm(np.fabs(x-y)) < tolerancia:
+		return True
+	else:
+		return False
 
 def cargarEntrenamiento():
 	global W
@@ -59,31 +66,27 @@ def checkFile(fname):
 def levantarYNormalizar():
 	global datos
 	i = 0
-	reader = csv.reader(open('RNA_TP1_datasets/tp1_ej1_training.csv','rb'))
+	reader = csv.reader(open('RNA_TP1_datasets/tp1_ej2_training.csv','rb'))
 	for vector in reader:
-		temp = np.zeros((12))
-		if vector[0] == 'B':
-			temp[0] = 1
-		else:
-			temp[0] = -1
-		temp [1:]= normalizar(np.asarray(vector[1:]))
+		temp = np.zeros((11))
+		temp [:-2]= normalizar(np.asarray(vector[:]))
+		temp [9] = (float(vector[8]) - 22.16) / 10.11
+		temp[10] = (float(vector[9]) - 24.47) / 9.60
 		if not(in_inicio_validacion <= i <= in_fin_validacion):
 			datos.append(temp)
 		i += 1
 
 
 def normalizar(row):
-	X = (-1)*np.ones((11))
-	X[0] = (float(row[0]) - 18556.3594594595) / 4445.9064834242
-	X[1] = (float(row[1]) - 21288.2324324324) / 6164.3937442774
-	X[2] = (float(row[2]) - 113925.113513514) / 28603.5114501387
-	X[3] = (float(row[3]) - 828266.510810811) / 389121.133315752
-	X[4] = (float(row[4]) - 1789.2648648649) / 481.6933044966
-	X[5] = (float(row[5]) - 1881.4783783784) / 609.3791254842
-	X[6] = (float(row[6]) - 3667.8054054054) / 1409.4645274337
-	X[7] = (float(row[7]) - 4574.2432432433) / 2040.155060359
-	X[8] = (float(row[8]) - 734.4297297297) / 262.3439058088
-	X[9] = (float(row[9]) - 1555.4054054054) / 613.1253350794
+	X = (-1)*np.ones((9))
+	X[0] = (float(row[0]) - 0.76) / 0.103722197
+	X[1] = (float(row[1]) - 673.41) / 86.90758141
+	X[2] = (float(row[2]) - 318.35) / 44.10
+	X[3] = (float(row[3]) - 177.53) / 44.61500609
+	X[4] = (float(row[4]) - 5.24) / 1.751696572
+	X[5] = (float(row[5]) - 3.42) / 1.106975514
+	X[6] = (float(row[6]) - 0.23) / 0.133087695
+	X[7] = (float(row[7]) - 2.77) / 1.56
 	X = np.asarray(X)
 	return X
 
@@ -96,7 +99,7 @@ def nonlin(x,deriv=False):
 def activation(X,W):
 	global Y
 	Y = []
-	Y.append(X.reshape(11,1))
+	Y.append(X.reshape(9,1))	
 	temp = (-1)*np.ones((in_m+1, 1))
 	temp[:-1] = np.dot(Y[0].T, W[0]).T
 	Y.append(nonlin(temp))
@@ -108,8 +111,8 @@ def correction(Y,Z,b=False):
 	E_2 = Z - Y[2]
 #salida menos lo esperado
 	delta2 = nonlin(Y[2],True)*E_2
-	delta1 = (nonlin(Y[1],True)*(np.dot(delta2.T, W[1].T).T))[:-1]	
-	dW[1] = learningRate(b)*np.dot(Y[1],delta2.T)
+	delta1 = (nonlin(Y[1],True)*(np.dot(delta2, W[1].T).T))[:-1]	
+	dW[1] = learningRate(b)*np.dot(Y[1],delta2)
 	dW[0] = learningRate(b)*np.dot(Y[0],delta1.T)
 	e = np.linalg.norm(E_2,2)
 	return e
@@ -140,7 +143,7 @@ def graficarResultados(precision, recall, matrix):
 	plt.xticks(tick_marks, ['Positive', 'Negative'], rotation=45)
 	plt.yticks(tick_marks, ['True', 'False'])
 	#plt.show()
-	plt.savefig('results/'fname+'.png', format='png')
+	plt.savefig('results/'+fname+'.png', format='png')
 
 def incremental(b):
 	global W
@@ -151,22 +154,14 @@ def incremental(b):
 	for i in np.random.permutation(len(datos)):
 		row = datos[i]
 		dW = [np.zeros((10, in_m)), np.zeros((in_m, 1))]
-#Calculo de la diferencia entre el valor output y el esperado
-		esperado = row[0]
-		X = row[1:]
-		np.reshape(X, (11,1))
+		#Calculo de la diferencia entre el valor output y el esperado
+		esperado = row[9:]
+		X = row[:-2]
+		np.reshape(X, (9,1))
 		A = activation(X,W) # devuelve una lista con los resultados
 		e += correction(A,esperado, b)
 		adaptation(W)
 	return e
-
-def interpretar(Y):
-#interpretacion del resultado en letras
-	if (Y[2] > 0):
-		diagnostico = "B"
-	else:
-		diagnostico = "M"
-	return diagnostico
 
 def entrenamiento():
 	print 'Comienza Entrenamiento'
@@ -196,12 +191,12 @@ def cicloCompleto():
 	reader = csv.reader(open(in_dataset,'rb'))
 	i = 0
 	for row in reader:
-		X = [float(row[1]), float(row[2]), float(row[3]), float(row[4]), float(row[5]), float(row[6]), float(row[7]), float(row[8]), float(row[9]), float(row[10])]
+		X = [float(row[0]), float(row[1]), float(row[2]), float(row[3]), float(row[4]), float(row[5]), float(row[6]), float(row[7])]
 		N =	normalizar(X)
 		A = activation(N,W) # devuelve una lista con los resultados
 		if (in_inicio_validacion <= i <= in_fin_validacion):
 			esperados.append(row[0])
-			resultados.append(interpretar(A))
+			resultados.append(A)
 		i += 1
 	return esperados, resultados
 
@@ -279,15 +274,15 @@ def main():
 	print 'Termina de normalizar'
 	print 'Pre entrenamiento'
 	esperados, resultados = cicloCompleto()
-	precision(esperados, resultados)
+	#precision(esperados, resultados)
 	entrenamientoCargado = cargarEntrenamiento()
 	if not(entrenamientoCargado):
 		entrenamiento()
 		guardarEntrenamiento()
 	print 'Post entrenamiento'
 	esperados, resultados = cicloCompleto()
-	pres, rec, mat = precision(esperados, resultados)
-	graficarResultados(pres, rec, mat)
+	#pres, rec, mat = precision(esperados, resultados)
+	#graficarResultados(pres, rec, mat)
 
 if __name__ == "__main__":
     main()

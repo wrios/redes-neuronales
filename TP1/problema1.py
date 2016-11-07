@@ -14,10 +14,10 @@ lr = in_lr
 cota = 0.000001
 in_inicio_validacion = 0
 in_fin_validacion = 0
-fname = str(in_m)+'_'+str(in_lr)+'_'+str(in_T)
+fname = 'p1_'+str(in_m)+'_'+str(in_lr)+'_'+str(in_T)
 in_dataset = 'RNA_TP1_datasets/tp1_ej1_training.csv'
-Y = [np.random.uniform( -0.1, 0.1, (11,1)), np.random.uniform( -0.1, 0.1, (in_m+1,1)), np.random.uniform(-0.1, 0.1, (1,2))]
-W = [np.random.uniform( -0.1, 0.1, (11,in_m)), np.random.uniform( -0.1, 0.1, (in_m+1,2))]
+Y = [np.random.uniform( -0.1, 0.1, (11,1)), np.random.uniform( -0.1, 0.1, (in_m+1,1)), np.random.uniform(-0.1, 0.1, (1,1))]
+W = [np.random.uniform( -0.1, 0.1, (11,in_m)), np.random.uniform( -0.1, 0.1, (in_m+1,1))]
 dW = [np.zeros((11, in_m)), np.zeros((in_m+1, 1))]
 esperados = []
 resultados = []
@@ -67,7 +67,7 @@ def levantarYNormalizar():
 		else:
 			temp[0] = -1
 		temp [1:]= normalizar(np.asarray(vector[1:]))
-		if not(in_inicio_validacion <= i <= in_fin_validacion):
+		if not(in_inicio_validacion <= i < in_fin_validacion):
 			datos.append(temp)
 		i += 1
 
@@ -140,7 +140,7 @@ def graficarResultados(precision, recall, matrix):
 	plt.xticks(tick_marks, ['Positive', 'Negative'], rotation=45)
 	plt.yticks(tick_marks, ['True', 'False'])
 	#plt.show()
-	plt.savefig('results/'fname+'.png', format='png')
+	plt.savefig('results/'+fname+'.png', format='png')
 
 def incremental(b):
 	global W
@@ -199,7 +199,7 @@ def cicloCompleto():
 		X = [float(row[1]), float(row[2]), float(row[3]), float(row[4]), float(row[5]), float(row[6]), float(row[7]), float(row[8]), float(row[9]), float(row[10])]
 		N =	normalizar(X)
 		A = activation(N,W) # devuelve una lista con los resultados
-		if (in_inicio_validacion <= i <= in_fin_validacion):
+		if (in_fin_validacion - in_inicio_validacion == 0) or (in_inicio_validacion <= i < in_fin_validacion):
 			esperados.append(row[0])
 			resultados.append(interpretar(A))
 		i += 1
@@ -272,7 +272,7 @@ def main():
 			in_m = int(sys.argv[1])
 			in_lr = float(sys.argv[2])
 			in_T = int(sys.argv[3])
-	fname = str(in_m)+'_'+str(in_lr)+'_'+str(in_T)+'_'+str(in_inicio_validacion)+'_'+str(in_fin_validacion)
+	fname = 'p1_'+str(in_m)+'_'+str(in_lr)+'_'+str(in_T)+'_'+str(in_inicio_validacion)+'_'+str(in_fin_validacion)
 	inicializarMatrices()
 	print 'Levantar y normalizar'
 	levantarYNormalizar()
