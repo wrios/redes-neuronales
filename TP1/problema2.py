@@ -8,8 +8,8 @@ from numpy import linalg as LA
 import matplotlib.pylab as plt
 
 in_T = 3000
-in_m = 12
-in_lr = 0.1
+in_m = 30
+in_lr = 0.05
 lr = in_lr
 cota = 0.000001
 in_inicio_validacion = 0
@@ -89,6 +89,10 @@ def normalizar(row):
 	X[7] = (float(row[7]) - 2.77) / 1.56
 	X = np.asarray(X)
 	return X
+
+def denormalizar(R):
+	R[0][0] = (R[0][0] * 10.11) + 22.16
+	R[0][1] = (R[0][1] * 9.60) + 24.47
 
 def nonlin(x,deriv=False):
     if(deriv==True):
@@ -194,32 +198,24 @@ def cicloCompleto():
 		X = [float(row[0]), float(row[1]), float(row[2]), float(row[3]), float(row[4]), float(row[5]), float(row[6]), float(row[7])]
 		N =	normalizar(X)
 		A = activation(N,W) # devuelve una lista con los resultados
-		if (in_inicio_validacion <= i <= in_fin_validacion):
-			esperados.append(row[0])
-			resultados.append(A)
+		if (in_fin_validacion - in_inicio_validacion == 0) or (in_inicio_validacion <= i < in_fin_validacion):
+			esperados.append([float(row[8]), float(row[9])])
+			denormalizar(A[2])
+			resultados.append(A[2][0])
 		i += 1
 	return esperados, resultados
 
 def precision(esperados, resultados):
-	tPositives = 0.0
-	fPositives = 0.0
-	tNegatives = 0.0
-	fNegatives = 0.0
+	aceptables = 0.0
+	totales = 0.0
 	for i in xrange(0,len(esperados)):
-		if esperados[i] == "M" and resultados[i] == "M":
-			tPositives += 1
-		elif esperados[i] == "B" and resultados[i] == "M":
-			fPositives += 1
-		elif esperados[i] == "B" and resultados[i] == "B":
-			tNegatives += 1
-		elif esperados[i] == "M" and resultados[i] == "B":
-			fNegatives += 1
-	precision = tPositives/(tPositives + fPositives)
-	recall = tPositives/(tPositives + fNegatives)
-	matrix = np.matrix([[tPositives,fNegatives],[fPositives,tNegatives]])
-	print 'Precision: ', precision, ' Recall: ', recall
-	print matrix
-	return precision, recall, matrix
+		#print esperados[i], '   =    ', resultados[i]
+		if valorAceptable(esperados[i],resultados[i]):
+			aceptables += 1
+		totales += 1
+	precision = aceptables/totales
+	print 'Precision: ', precision
+	return precision
 
 def learningRate(b):
 	global lr
@@ -274,14 +270,14 @@ def main():
 	print 'Termina de normalizar'
 	print 'Pre entrenamiento'
 	esperados, resultados = cicloCompleto()
-	#precision(esperados, resultados)
+	precision(esperados, resultados)
 	entrenamientoCargado = cargarEntrenamiento()
 	if not(entrenamientoCargado):
 		entrenamiento()
 		guardarEntrenamiento()
 	print 'Post entrenamiento'
 	esperados, resultados = cicloCompleto()
-	#pres, rec, mat = precision(esperados, resultados)
+	precision(esperados, resultados)
 	#graficarResultados(pres, rec, mat)
 
 if __name__ == "__main__":
