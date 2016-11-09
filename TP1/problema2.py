@@ -7,14 +7,18 @@ import numpy as np
 from numpy import linalg as LA 
 import matplotlib.pylab as plt
 
-in_T = 3000
-in_m = 30
-in_lr = 0.05
+in_T = 4000
+in_m = 120
+in_lr = 0.08
 lr = in_lr
 cota = 0.000001
 in_inicio_validacion = 0
 in_fin_validacion = 0
 tolerancia = 0.5
+data_min1 = 99
+data_max1 = 0
+data_min2 = 99
+data_max2 = 0
 fname = str(in_m)+'_'+str(in_lr)+'_'+str(in_T)
 in_dataset = 'RNA_TP1_datasets/tp1_ej2_training.csv'
 Y = [np.random.uniform( -0.1, 0.1, (9,1)), np.random.uniform( -0.1, 0.1, (in_m+1,1)), np.random.uniform(-0.1, 0.1, (1,2))]
@@ -65,17 +69,43 @@ def checkFile(fname):
 
 def levantarYNormalizar():
 	global datos
+	global data_min1
+	global data_max1
+	global data_min2
+	global data_max2
+	primero = True
 	i = 0
 	reader = csv.reader(open('RNA_TP1_datasets/tp1_ej2_training.csv','rb'))
 	for vector in reader:
+		if float(vector[8]) < data_min1:
+			data_min1 = float(vector[8])
+			primero = True
+		if float(vector[9]) < data_min2:
+			data_min2 = float(vector[9])
+			primero = False
+
+		if float(vector[8]) > data_max1:
+			data_max1 = float(vector[8])
+			primero = True
+		if float(vector[9]) > data_max2:
+			data_max2 = float(vector[9])
+			primero = False
+
+	print data_min1
+	print data_max1	
+	print data_min2
+	print data_max2
+	#wait()
+
+	reader = csv.reader(open('RNA_TP1_datasets/tp1_ej2_training.csv','rb'))
+	for vector in reader:
 		temp = np.zeros((11))
-		temp [:-2]= normalizar(np.asarray(vector[:]))
-		temp [9] = (float(vector[8]) - 22.16) / 10.11
-		temp[10] = (float(vector[9]) - 24.47) / 9.60
+		temp[:-2]= normalizar(np.asarray(vector[:]))
+		temp[9] = -1 + 2*((float(vector[8]) - data_min1) / (data_max1 - data_min1))
+		temp[10] = -1 + 2*((float(vector[9]) - data_min2) / (data_max2 - data_min2))
 		if not(in_inicio_validacion <= i <= in_fin_validacion):
 			datos.append(temp)
 		i += 1
-
 
 def normalizar(row):
 	X = (-1)*np.ones((9))
@@ -106,14 +136,14 @@ def activation(X,W):
 	Y.append(X.reshape(9,1))	
 	temp = (-1)*np.ones((in_m+1, 1))
 	temp[:-1] = np.dot(Y[0].T, W[0]).T
-	Y.append(nonlin(temp))
+	temp[:-1] = nonlin(temp[:-1])
+	Y.append(temp)
 	Y.append(nonlin(np.dot(Y[1].T, W[1])))
 	return Y
 
 def correction(Y,Z,b=False):
 	global dW
 	E_2 = Z - Y[2]
-#salida menos lo esperado
 	delta2 = nonlin(Y[2],True)*E_2
 	delta1 = (nonlin(Y[1],True)*(np.dot(delta2, W[1].T).T))[:-1]	
 	dW[1] = learningRate(b)*np.dot(Y[1],delta2)
@@ -163,6 +193,7 @@ def incremental(b):
 		X = row[:-2]
 		np.reshape(X, (9,1))
 		A = activation(X,W) # devuelve una lista con los resultados
+		#print 'A, esperado: ', A[2], esperado
 		e += correction(A,esperado, b)
 		adaptation(W)
 	return e
@@ -221,12 +252,12 @@ def learningRate(b):
 	global lr
 	if b:
 		#print 'crece ', lr
-		lr += 0.001
+		lr += 0.01
 		if lr > 0.1:
 			lr = in_lr
 	else:
 		lr -= lr/2
-		if lr < 0.001:
+		if lr < 0.01:
 			lr = 0.001
 	return lr
 
