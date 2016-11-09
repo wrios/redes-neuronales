@@ -9,12 +9,12 @@ import matplotlib.pylab as plt
 
 in_T = 4000
 in_m = 120
-in_lr = 0.08
+in_lr = 0.01
 lr = in_lr
 cota = 0.000001
 in_inicio_validacion = 0
 in_fin_validacion = 0
-tolerancia = 0.5
+tolerancia = 2
 data_min1 = 99
 data_max1 = 0
 data_min2 = 99
@@ -121,8 +121,9 @@ def normalizar(row):
 	return X
 
 def denormalizar(R):
-	R[0][0] = (R[0][0] * 10.11) + 22.16
-	R[0][1] = (R[0][1] * 9.60) + 24.47
+	R[0][0] = (((R[0][0] + 1) / 2 ) * (data_max1-data_min1)) + data_min1
+	R[0][1] = (((R[0][1] + 1) / 2 ) * (data_max2-data_min2)) + data_min2
+	#print R
 
 def nonlin(x,deriv=False):
     if(deriv==True):
@@ -193,10 +194,11 @@ def incremental(b):
 		X = row[:-2]
 		np.reshape(X, (9,1))
 		A = activation(X,W) # devuelve una lista con los resultados
-		#print 'A, esperado: ', A[2], esperado
+		if ((esperado[0] > 1) or (esperado[1]>1)): 
+			print 'A, esperado: ', A[2], esperado
 		e += correction(A,esperado, b)
 		adaptation(W)
-	return e
+	return e/len(datos)
 
 def entrenamiento():
 	print 'Comienza Entrenamiento'
@@ -240,7 +242,7 @@ def precision(esperados, resultados):
 	aceptables = 0.0
 	totales = 0.0
 	for i in xrange(0,len(esperados)):
-		#print esperados[i], '   =    ', resultados[i]
+		print esperados[i], '   =    ', resultados[i]
 		if valorAceptable(esperados[i],resultados[i]):
 			aceptables += 1
 		totales += 1
@@ -257,7 +259,7 @@ def learningRate(b):
 			lr = in_lr
 	else:
 		lr -= lr/2
-		if lr < 0.01:
+		if lr < 0.001:
 			lr = 0.001
 	return lr
 
