@@ -7,7 +7,7 @@ import numpy as np
 from numpy import linalg as LA 
 import matplotlib.pylab as plt
 
-in_T = 3000
+in_T = 5000
 in_m = 30
 in_lr = 0.1
 lr = in_lr
@@ -16,6 +16,7 @@ in_inicio_validacion = 0
 in_fin_validacion = 0
 fname = 'p1_'+str(in_m)+'_'+str(in_lr)+'_'+str(in_T)
 in_dataset = 'RNA_TP1_datasets/tp1_ej1_training.csv'
+in_train_dataset = 'RNA_TP1_datasets/tp1_ej1_training.csv'
 Y = [np.random.uniform( -0.1, 0.1, (11,1)), np.random.uniform( -0.1, 0.1, (in_m+1,1)), np.random.uniform(-0.1, 0.1, (1,1))]
 W = [np.random.uniform( -0.1, 0.1, (11,in_m)), np.random.uniform( -0.1, 0.1, (in_m+1,1))]
 dW = [np.zeros((11, in_m)), np.zeros((in_m+1, 1))]
@@ -59,7 +60,7 @@ def checkFile(fname):
 def levantarYNormalizar():
 	global datos
 	i = 0
-	reader = csv.reader(open('RNA_TP1_datasets/tp1_ej1_training.csv','rb'))
+	reader = csv.reader(open(in_train_dataset,'rb'))
 	for vector in reader:
 		temp = np.zeros((12))
 		if vector[0] == 'B':
@@ -67,7 +68,9 @@ def levantarYNormalizar():
 		else:
 			temp[0] = -1
 		temp [1:]= normalizar(np.asarray(vector[1:]))
-		if not(in_inicio_validacion <= i < in_fin_validacion):
+		if (in_dataset != in_train_dataset):
+			datos.append(temp)
+		elif not(in_inicio_validacion <= i < in_fin_validacion):
 			datos.append(temp)
 		i += 1
 
@@ -199,7 +202,10 @@ def cicloCompleto():
 		X = [float(row[1]), float(row[2]), float(row[3]), float(row[4]), float(row[5]), float(row[6]), float(row[7]), float(row[8]), float(row[9]), float(row[10])]
 		N =	normalizar(X)
 		A = activation(N,W) # devuelve una lista con los resultados
-		if (in_fin_validacion - in_inicio_validacion == 0) or (in_inicio_validacion <= i < in_fin_validacion):
+		if (in_dataset != in_train_dataset):
+			esperados.append(row[0])
+			resultados.append(interpretar(A))
+		elif ((in_fin_validacion - in_inicio_validacion == 0) or (in_inicio_validacion <= i < in_fin_validacion)):
 			esperados.append(row[0])
 			resultados.append(interpretar(A))
 		i += 1
@@ -255,8 +261,15 @@ def main():
 			print 'si no se especifica ningun parametro se usan los que estan por defecto en el codigo'
 			print 'el entrenamiento se guarda y carga dependiendo de los parametros tamanio_capa_oculta max_lr max_epocas inicio/fin_validacion'
 			return 0
+		elif len(sys.argv) == 6 and (len(sys.argv[1]) > 1):
+			in_dataset = sys.argv[1]
+			in_train_dataset = sys.argv[2]
+			in_m = int(sys.argv[3])
+			in_lr = float(sys.argv[4])
+			in_T = int(sys.argv[5])
 		elif len(sys.argv) == 7:
 			in_dataset = sys.argv[1]
+			in_train_dataset = in_dataset
 			in_m = int(sys.argv[2])
 			in_lr = float(sys.argv[3])
 			in_T = int(sys.argv[4])
@@ -272,6 +285,11 @@ def main():
 			in_m = int(sys.argv[1])
 			in_lr = float(sys.argv[2])
 			in_T = int(sys.argv[3])
+		elif len(sys.argv) == 2:
+			in_dataset = sys.argv[1]
+		elif len(sys.argv) == 3:
+			in_dataset = sys.argv[1]
+			in_train_dataset = sys.argv[2]
 	fname = 'p1_'+str(in_m)+'_'+str(in_lr)+'_'+str(in_T)+'_'+str(in_inicio_validacion)+'_'+str(in_fin_validacion)
 	inicializarMatrices()
 	print 'Levantar y normalizar'
