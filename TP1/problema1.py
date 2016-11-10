@@ -142,7 +142,7 @@ def graficarResultados(precision, recall, matrix):
 	tick_marks = np.arange(len(['True', 'False']))
 	plt.xticks(tick_marks, ['Positive', 'Negative'], rotation=45)
 	plt.yticks(tick_marks, ['True', 'False'])
-	#plt.show()
+	plt.show()
 	plt.savefig('results/'+fname+'.png', format='png')
 
 def incremental(b):
@@ -256,8 +256,7 @@ def main():
 	global datos
 	if len(sys.argv) > 1:
 		if sys.argv[1] == '-h' or sys.argv[1] == '--help':
-			print 'usage: python PerceptronMulticapa.py dataset tamanio_capa_oculta max_lr max_epocas inicio_validacion fin_validacion'
-			print 'los parametros de validacion se definen con el inicio y final del segmento en int'
+			print 'los parametros disponibles aparecen en el readme junto con su explicacion'
 			print 'si no se especifica ningun parametro se usan los que estan por defecto en el codigo'
 			print 'el entrenamiento se guarda y carga dependiendo de los parametros tamanio_capa_oculta max_lr max_epocas inicio/fin_validacion'
 			return 0

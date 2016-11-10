@@ -161,20 +161,15 @@ def progress(count, total, suffix=''):
     sys.stdout.write('[%s] %s%s ...%s\r' % (bar, percents, '%', suffix))
     sys.stdout.flush()  # As suggested by Rom Ruben
 
-def graficarResultados(precision, recall, matrix):
-	fig = plt.figure(figsize=(4, 4))
-	plt.imshow(matrix, interpolation='nearest')
-	thresh = matrix.max() / 2.
-	for i, j in itertools.product(range(matrix.shape[0]), range(matrix.shape[1])):
-	    plt.text(j, i, matrix[i, j],
-	             horizontalalignment="center",
-	             color="white" if matrix[i, j] > thresh else "black")
-	plt.tight_layout()
-	fig.suptitle('Precision: '+str(precision)+'\nRecall: '+str(recall), fontsize=15)
-	tick_marks = np.arange(len(['True', 'False']))
-	plt.xticks(tick_marks, ['Positive', 'Negative'], rotation=45)
-	plt.yticks(tick_marks, ['True', 'False'])
-	#plt.show()
+def graficarResultados(esperados, resultados):
+	fig = plt.figure()
+	plt.gca().set_color_cycle(['red', 'green', 'blue', 'yellow'])
+	esperados.sort()
+	resultados.sort(key=lambda tup: tup[1])
+	plt.plot(esperados)
+	plt.plot(resultados)
+	plt.legend(['esperados_v1', 'esperados_v2', 'resultados_v1', 'resultados_v2'], loc='upper left')
+	plt.show()
 	plt.savefig('results/'+fname+'.png', format='png')
 
 def incremental(b):
@@ -275,8 +270,7 @@ def main():
 	global datos
 	if len(sys.argv) > 1:
 		if sys.argv[1] == '-h' or sys.argv[1] == '--help':
-			print 'usage: python PerceptronMulticapa.py dataset tamanio_capa_oculta max_lr max_epocas inicio_validacion fin_validacion'
-			print 'los parametros de validacion se definen con el inicio y final del segmento en int'
+			print 'los parametros disponibles aparecen en el readme junto con su explicacion'
 			print 'si no se especifica ningun parametro se usan los que estan por defecto en el codigo'
 			print 'el entrenamiento se guarda y carga dependiendo de los parametros tamanio_capa_oculta max_lr max_epocas inicio/fin_validacion'
 			return 0
@@ -324,6 +318,7 @@ def main():
 	print 'Post entrenamiento'
 	esperados, resultados = cicloCompleto()
 	precision(esperados, resultados)
+	graficarResultados(esperados, resultados)
 
 if __name__ == "__main__":
     main()
