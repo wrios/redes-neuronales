@@ -168,7 +168,7 @@ def graficarResultados(esperados, resultados):
 	resultados.sort(key=lambda tup: tup[1])
 	plt.plot(esperados)
 	plt.plot(resultados)
-	plt.legend(['esperados_v1', 'esperados_v2', 'resultados_v1', 'resultados_v2'], loc='upper left')
+	plt.legend(['esperados_calefaccion', 'esperados_refrigeracion', 'resultados_calefaccion', 'resultados_refrigeracion'], loc='upper left')
 	plt.show()
 	plt.savefig('results/'+fname+'.png', format='png')
 
@@ -251,12 +251,12 @@ def learningRate(b):
 	if b:
 		#print 'crece ', lr
 		lr += 0.01
-		if lr > 0.1:
+		if lr > in_lr:
 			lr = in_lr
 	else:
 		lr -= lr/2
-		if lr < 0.001:
-			lr = 0.001
+		if lr < 0.0001:
+			lr = 0.0001
 	return lr
 
 def main():
