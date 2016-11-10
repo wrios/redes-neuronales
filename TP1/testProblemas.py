@@ -21,6 +21,7 @@ os.system("python problema1.py 20 0.15 3000")
 os.system("python problema1.py 30 0.15 3000")
 os.system("python problema1.py 60 0.15 3000")
 os.system("python problema1.py 80 0.15 3000")
+
 print 'problema2'
 print 'Bloque 1'
 os.system("python problema2.py 40 0.005 10000")
@@ -42,3 +43,13 @@ os.system("python problema2.py 40 0.15 10000")
 os.system("python problema2.py 55 0.15 10000")
 os.system("python problema2.py 80 0.15 10000")
 os.system("python problema2.py 100 0.15 10000")
+
+print 'problema1'
+os.system("python problema1.py 60 0.005 3000 0 40")
+os.system("python problema1.py 60 0.005 3000 0 100")
+os.system("python problema1.py 60 0.005 3000 0 200")
+
+print 'problema2'
+os.system("python problema2.py 40 0.05 10000 0 50")
+os.system("python problema2.py 40 0.05 10000 0 125")
+os.system("python problema2.py 40 0.05 10000 0 250")
