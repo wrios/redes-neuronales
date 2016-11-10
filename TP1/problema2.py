@@ -7,6 +7,7 @@ import numpy as np
 from numpy import linalg as LA 
 import matplotlib.pylab as plt
 
+e = 0
 in_T = 10000
 in_m = 120
 in_lr = 0.05
@@ -161,15 +162,16 @@ def progress(count, total, suffix=''):
     sys.stdout.write('[%s] %s%s ...%s\r' % (bar, percents, '%', suffix))
     sys.stdout.flush()  # As suggested by Rom Ruben
 
-def graficarResultados(esperados, resultados):
+def graficarResultados(esperados, resultados, precision):
 	fig = plt.figure()
+	fig.suptitle('Precision: '+str(precision)+'\ne='+str(e), fontsize=15)
 	plt.gca().set_color_cycle(['red', 'green', 'blue', 'yellow'])
 	esperados.sort()
 	resultados.sort(key=lambda tup: tup[1])
 	plt.plot(esperados)
 	plt.plot(resultados)
 	plt.legend(['esperados_calefaccion', 'esperados_refrigeracion', 'resultados_calefaccion', 'resultados_refrigeracion'], loc='upper left')
-	plt.show()
+	#plt.show()
 	plt.savefig('results/'+fname+'.png', format='png')
 
 def incremental(b):
@@ -177,6 +179,7 @@ def incremental(b):
 	global dW
 	global X
 	global Y
+	global e
 	e = 0
 	for i in np.random.permutation(len(datos)):
 		row = datos[i]
@@ -317,8 +320,8 @@ def main():
 		guardarEntrenamiento()
 	print 'Post entrenamiento'
 	esperados, resultados = cicloCompleto()
-	precision(esperados, resultados)
-	graficarResultados(esperados, resultados)
+	pres = precision(esperados, resultados)
+	graficarResultados(esperados, resultados, pres)
 
 if __name__ == "__main__":
     main()

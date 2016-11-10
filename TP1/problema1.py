@@ -7,6 +7,7 @@ import numpy as np
 from numpy import linalg as LA 
 import matplotlib.pylab as plt
 
+e = 0
 in_T = 5000
 in_m = 30
 in_lr = 0.1
@@ -138,11 +139,11 @@ def graficarResultados(precision, recall, matrix):
 	             horizontalalignment="center",
 	             color="white" if matrix[i, j] > thresh else "black")
 	plt.tight_layout()
-	fig.suptitle('Precision: '+str(precision)+'\nRecall: '+str(recall), fontsize=15)
+	fig.suptitle('Precision: '+str(precision)+'\nRecall: '+str(recall)+'\ne='+str(e), fontsize=15)
 	tick_marks = np.arange(len(['True', 'False']))
 	plt.xticks(tick_marks, ['Positive', 'Negative'], rotation=45)
 	plt.yticks(tick_marks, ['True', 'False'])
-	plt.show()
+	#plt.show()
 	plt.savefig('results/'+fname+'.png', format='png')
 
 def incremental(b):
@@ -150,6 +151,7 @@ def incremental(b):
 	global dW
 	global X
 	global Y
+	global e
 	e = 0
 	for i in np.random.permutation(len(datos)):
 		row = datos[i]
