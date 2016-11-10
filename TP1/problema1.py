@@ -229,7 +229,7 @@ def precision(esperados, resultados):
 			fNegatives += 1
 	precision = tPositives/(tPositives + fPositives)
 	recall = tPositives/(tPositives + fNegatives)
-	matrix = np.matrix([[tPositives,fNegatives],[fPositives,tNegatives]])
+	matrix = np.matrix([[tPositives,tNegatives],[fPositives,fNegatives]])
 	print 'Precision: ', precision, ' Recall: ', recall
 	print matrix
 	return precision, recall, matrix
