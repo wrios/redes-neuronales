@@ -88,12 +88,13 @@ def activar():
 				j = j_t
 	return i, j, Y_t
 
-def vecindad(n, i, j, Y_t):
+def vecindad(n, i, j, Y_t, X):
 	r = []
 	for i_t in range(0,m1):
 		for j_t in range(0,m2):
 			if abs(i - i_t) <= gaussiana(n) and abs(j - j_t) <= gaussiana(n):
-				x = [i_t, j_t, Y_t]
+				if not(i == i_t && j == j_t):
+					x = [i_t, j_t, X - Y_t]
 				r.append(x)
 	return r
 
@@ -119,7 +120,7 @@ def epoca(n):
 		i, j, Y_t = activar()
 		#print 'i: ', i,'j: ', j, 'vector[0]: ', vector[0]
 		#M[i][j].append(vector[0])
-		v = vecindad(n, i, j, Y_t)
+		v = vecindad(n, i, j, Y_t, X)
 		vecindades.append(v)
 	correccion(vecindades, n)
 
