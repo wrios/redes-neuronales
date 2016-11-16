@@ -14,16 +14,16 @@ import ast
 import scipy.io
 from numpy import linalg as LA
 
-TotalEpoca = 500
-m1 = 5
-m2 = 5
+TotalEpoca = 2000
+m1 = 12
+m2 = 12
 W = []
 X = np.ones((856,1))
 Y = np.zeros((856,1))
 M = []
 Map = np.zeros((m1, m2))
 dmax = m1 #lo suficientemente grande para poder abarcar todas las neuronas y luego solo quede la ganadora
-dmin = 0.25 # hace que vaya mas lento o rapido el aprendizaje
+dmin = 0.55 # hace que vaya mas lento o rapido el aprendizaje
 
 in_inicio_validacion = 0
 in_fin_validacion = 0
@@ -33,8 +33,9 @@ in_guardarEntrenamiento = True
 in_dataset = 'tp2_training_dataset.csv'
 
 def learningRate(n):
-	lr = 0.001/(np.exp(n))
+	lr = 0.05/np.power(n+16,1.8)
 	return lr
+
 
 def armarMatrizActivaciones():
 	global M
@@ -50,7 +51,7 @@ def progress(count, total, suffix=''):
     percents = round(100.0 * count / float(total), 1)
     bar = '=' * filled_len + '-' * (bar_len - filled_len)
     sys.stdout.write('[%s] %s%s ...%s\r' % (bar, percents, '%', suffix))
-    sys.stdout.flush()  # As suggested by Rom Ruben
+    sys.stdout.flush()  
 
 def armarMapaActivaciones():
 	global M
@@ -60,7 +61,10 @@ def armarMapaActivaciones():
 			Map[i][j] = most_common(M[i][j])
 
 def gaussiana(n):
-	return (dmax*((dmin/dmax)**(n/TotalEpoca)))
+	r =  (dmax*((dmin/dmax)**(n/TotalEpoca)))
+	if r < 1 and r > 0.3:
+		r = 1
+	return r 	
 
 def armarMatriz():
 	global W
@@ -79,7 +83,7 @@ def activar():
 	j = 0
 	for i_t in xrange(0,m1):
 		for j_t in xrange(0,m2):
-			Y_t = (W[i_t][j_t] - X)
+			Y_t = (X - W[i_t][j_t] )
 			norm_t = np.linalg.norm(Y_t)
 			if norm_t < norm:
 				norm = norm_t
@@ -88,39 +92,52 @@ def activar():
 				j = j_t
 	return i, j, Y_t
 
-def vecindad(n, i, j, Y_t, X):
-	r = []
-	for i_t in range(0,m1):
-		for j_t in range(0,m2):
-			if abs(i - i_t) <= gaussiana(n) and abs(j - j_t) <= gaussiana(n):
-				if not(i == i_t && j == j_t):
-					x = [i_t, j_t, X - Y_t]
-				r.append(x)
+def rangoVecindad(n, i, j, i_t ,j_t):
+	return np.exp((-((np.power(i-i_t,2)+(np.power(j-j_t,2)))/(2*(np.power(gaussiana(n),2))))))
+
+def vecindad(n, i, j, Y_t):
+	r = [] 
+	for i_t in range(int(i-(gaussiana(n)/2)),int(i+(gaussiana(n)/2)+1)):
+		for j_t in range(int(j-(gaussiana(n)/2)),int(1+i+(gaussiana(n)/2))):
+			x = []
+			t1 = i_t
+			t2 = j_t
+			if t1 < 0:
+				t1 += m1
+			if t1 > m1-1:
+				t1 = t1%(m1-1)	
+			if t2 < 0:
+				t2 += m1
+			if t2 > m1-1:
+				t2 = t2%(m1-1)	 	
+		#	print rangoVecindad(n, i, j, t1, t2)
+			if not(i == t1 and j == t2):
+				x = [t1, t2, (X - W[t1][t2])]#*rangoVecindad(n, i, j, t1, t2)]
+			else:
+				x = [t1, t2, Y_t] 
+			r.append(x)		
 	return r
 
 def correccion(vecindades, n):
 	global W
+	e = 0 
 	for vs in vecindades:
 		for v in vs:
-			i, j, delta = v
+			i, j, delta = v	
 			W[i][j] += (learningRate(n) * delta)
+			e += np.linalg.norm(learningRate(n) * delta)
+	print e, n, gaussiana(n)		
 
 def epoca(n):
 	global X
 	global W
 	global Y
-	#l = 1
 	vecindades = []
 	reader = csv.reader(open(in_dataset,'rb'))
 	for vector in reader:
-		#print 'Elemento ', l, ' de 900'
-		#l += 1
-		#if not(int(in_inicio_validacion) <= e_actual <= int (in_fin_validacion)):
 		X[:] = np.asarray(vector[1:]).reshape((856,1))
 		i, j, Y_t = activar()
-		#print 'i: ', i,'j: ', j, 'vector[0]: ', vector[0]
-		#M[i][j].append(vector[0])
-		v = vecindad(n, i, j, Y_t, X)
+		v = vecindad(n, i, j, Y_t)
 		vecindades.append(v)
 	correccion(vecindades, n)
 
@@ -130,6 +147,7 @@ def entrenamiento():
 		progress(n, TotalEpoca)
 		epoca(n)
 		n += 1
+#		print 'epoca',n
 
 def cicloCompleto():
 	global X
