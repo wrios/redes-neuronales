@@ -16,13 +16,14 @@ from numpy import linalg as LA
 import os.path
 import matplotlib.pylab as plt
 
-TotalEpoca = 500
-m1 = 14
-m2 = 14
+in_T = 500
+m1 = 15
+m2 = 15
 W = []
 X = np.ones((856,1))
 Y = np.zeros((856,1))
 M = []
+datos = []
 Map = np.zeros((m1, m2))
 dmax = m1 #lo suficientemente grande para poder abarcar todas las neuronas y luego solo quede la ganadora
 dmin = 0.55 # hace que vaya mas lento o rapido el aprendizaje
@@ -33,12 +34,33 @@ in_cargarEntrenamiento = False
 in_entrenamiento = True
 in_guardarEntrenamiento = True
 in_dataset = 'tp2_training_dataset.csv'
-fname = 'kohonen_'+str(dmin)+'_'+str(TotalEpoca)+'_'+str(in_inicio_validacion)+'_'+str(in_fin_validacion)
+in_train_dataset = in_dataset
+fname = 'kohonen_'+'_'+str(m1)+'_'+str(m2)+'_'+str(dmin)+'_'+str(in_T)+'_'+str(in_inicio_validacion)+'_'+str(in_fin_validacion)
+
+def inicializarMatrices():
+	armarMatriz()
+	armarMatrizActivaciones()
+	armarMapaActivaciones()
+
+#def learningRate(n):
+	#lr = 0.05/np.power(n+16,1.8)
+	#return lr
 
 def learningRate(n):
-	lr = 0.05/np.power(n+16,1.8)
+	lr = 0.001 * ((in_T - n)/in_T)
 	return lr
 
+def levantarYNormalizar():
+	global datos
+	i = 0
+	reader = csv.reader(open(in_train_dataset,'rb'))
+	for vector in reader:
+		temp = np.asarray(vector[1:]).reshape((856,1))
+		if (in_dataset != in_train_dataset):
+			datos.append(temp)
+		elif not(in_inicio_validacion <= i < in_fin_validacion):
+			datos.append(temp)
+		i += 1
 
 def armarMatrizActivaciones():
 	global M
@@ -59,15 +81,21 @@ def progress(count, total, suffix=''):
 def armarMapaActivaciones():
 	global M
 	global Map
+	Map = np.zeros((m1, m2))
 	for i in xrange(0,m1):
 		for j in xrange(0,m2):
 			Map[i][j] = most_common(M[i][j])
 
 def gaussiana(n):
-	r =  (dmax*((dmin/dmax)**(n/TotalEpoca)))
+	r =  (dmax*((dmin/dmax)**(n/in_T)))
 	if r < 1 and r > 0.4:
 		r = 1
-	return r 	
+	return r
+
+def sigma(n):
+	dr = (m1-1)/(in_T*m1)
+	sigma = m1/(1+(n*m1*dr))	
+	return sigma 
 
 def armarMatriz():
 	global W
@@ -95,13 +123,13 @@ def activar():
 				j = j_t
 	return i, j, Y_t
 
-def rangoVecindad(n, i, j, i_t ,j_t):
-	return np.exp((-((np.power(i-i_t,2)+(np.power(j-j_t,2)))/(2*(np.power(gaussiana(n),2))))))
+def rangoVecindad(n, i, j, i_t ,j_t,sigma):
+	return np.exp((-((np.power(i-i_t,2)+(np.power(j-j_t,2)))/(2*(np.power(sigma,2))))))
 
 def vecindad(n, i, j, Y_t):
 	r = [] 
-	for i_t in range(int(i-(gaussiana(n)/2)),int(i+(gaussiana(n)/2)+1)):
-		for j_t in range(int(j-(gaussiana(n)/2)),int(1+i+(gaussiana(n)/2))):
+	for i_t in range(int(i-(sigma(n)/2)),int(i+(sigma(n)/2)+1)):
+		for j_t in range(int(j-(sigma(n)/2)),int(1+i+(sigma(n)/2))):
 			x = []
 			t1 = i_t
 			t2 = j_t
@@ -115,7 +143,7 @@ def vecindad(n, i, j, Y_t):
 				t2 = t2%(m1-1)	 	
 		#	print rangoVecindad(n, i, j, t1, t2)
 			if not(i == t1 and j == t2):
-				x = [t1, t2, (X - W[t1][t2])]#*rangoVecindad(n, i, j, t1, t2)]
+				x = [t1, t2, (X - W[t1][t2])*rangoVecindad(n, i, j, t1, t2, sigma(n))]
 			else:
 				x = [t1, t2, Y_t] 
 			r.append(x)		
@@ -129,15 +157,17 @@ def correccion(vecindades, n):
 			i, j, delta = v	
 			W[i][j] += (learningRate(n) * delta)
 			e += np.linalg.norm(learningRate(n) * delta)
-	print e, n, gaussiana(n)		
+	print e, n, sigma(n)		
 
 def epoca(n):
 	global X
 	global W
 	global Y
+	global datos
 	vecindades = []
 	reader = csv.reader(open(in_dataset,'rb'))
 	for vector in reader:
+		#if not(int(in_inicio_validacion) <= e_actual <= int (in_fin_validacion)):
 		X[:] = np.asarray(vector[1:]).reshape((856,1))
 		i, j, Y_t = activar()
 		v = vecindad(n, i, j, Y_t)
@@ -146,8 +176,8 @@ def epoca(n):
 
 def entrenamiento():
 	n = 1
-	while n < TotalEpoca:
-		progress(n, TotalEpoca)
+	while n < in_T:
+		progress(n, in_T)
 		epoca(n)
 		n += 1
 #		print 'epoca',n
@@ -156,6 +186,7 @@ def cicloCompleto():
 	global X
 	global W
 	global Y
+	global M
 	l = 1
 	reader = csv.reader(open(in_dataset,'rb'))
 	for vector in reader:
@@ -167,12 +198,13 @@ def cicloCompleto():
 		l += 1
 
 def graficar():
+	armarMapaActivaciones()
 	fig = plt.figure()
 	fig.suptitle('kohonen'+fname)
 	print Map
 	plt.matshow(Map)
-	plt.savefig('training/'+fname+'.png', format = 'png')
-	#plt.show()
+	#plt.savefig('training/'+fname+'.png', format = 'png')
+	plt.show()
 
 def most_common(L):
 	if len(L) > 0:
@@ -208,65 +240,70 @@ def checkFile(fname):
 	else:
 		return False
 
-
 def main():
-	global fname
-	global dmin
 	global in_dataset
-	global TotalEpoca
-	global in_cargarEntrenamiento
-	global in_entrenamiento
-	global in_guardarEntrenamiento
+	global in_metodo
+	global in_T
 	global in_inicio_validacion
 	global in_fin_validacion
+	global fname
+	global datos
+	global m1
+	global m2
 	if len(sys.argv) > 1:
 		if sys.argv[1] == '-h' or sys.argv[1] == '--help':
-			print 'usage: python kohonen.py dataset cargarEntrenamiento? entrenar? guardarEntrenamiento? inicio_validacion fin_validacion'
-			print 'los parametros bool se definen con 1 o 0, los de validacion con el inicio y final del segmento en int'
+			print 'los parametros disponibles aparecen en el readme junto con su explicacion'
 			print 'si no se especifica ningun parametro se usan los que estan por defecto en el codigo'
-			print 'el entrenamiento se guarda y carga dependiendo de los parametros TotalEpoca en el codigo e inicio / validacion de parametros'
+			print 'el entrenamiento se guarda y carga dependiendo de los parametros max_epocas inicio/fin_validacion'
 			return 0
-		else:
+		elif len(sys.argv) == 2:
 			in_dataset = sys.argv[1]
-			#dmin es para la funcion gaussiana, velocidad con la que decrece el vecindario(no explicitamente,
-			# ya que hay otros parametros involucrados )
-			dmin = float(sys.argv[2])
-			#cantidad total de epocas
-			TotalEpoca = int(sys.argv[3])
-			in_cargarEntrenamiento = sys.argv[4] == '1'
-			in_entrenamiento = sys.argv[5] == '1'
-			in_guardarEntrenamiento = sys.argv[6] == '1'
-			in_inicio_validacion = sys.argv[7]
-			in_fin_validacion = sys.argv[8]
-	fname = 'kohonen_'+str(dmin)+'_'+str(TotalEpoca)+'_'+str(in_inicio_validacion)+'_'+str(in_fin_validacion)
+			in_train_dataset = in_dataset
+		elif len(sys.argv) == 3:
+			in_dataset = sys.argv[1]
+			in_train_dataset = sys.argv[2]
+		elif len(sys.argv) == 4:
+			m1 = int(sys.argv[1])
+			m2 = int(sys.argv[2])
+			in_T = int(sys.argv[3])
+		elif len(sys.argv) == 6:
+			m1 = int(sys.argv[1])
+			m2 = int(sys.argv[2])
+			in_T = int(sys.argv[3])
+			in_inicio_validacion = int(sys.argv[4])
+			in_fin_validacion = int(sys.argv[5])
+		#elif len(sys.argv) == 6:
+			#m1 = int(sys.argv[1])
+			#m2 = int(sys.argv[2])
+			#in_T = int(sys.argv[3])
+			#in_dataset = sys.argv[4]
+			#in_train_dataset = sys.argv[5]
+		elif len(sys.argv) == 7:
+			m1 = int(sys.argv[1])
+			m2 = int(sys.argv[2])
+			in_T = int(sys.argv[3])
+			in_dataset = sys.argv[4]
+			in_train_dataset = in_dataset
+			in_inicio_validacion = int(sys.argv[5])
+			in_fin_validacion = int(sys.argv[6])
 
-	if in_cargarEntrenamiento:
-		print 'Comienza Cargar Entrenamiento'
-		cargarEntrenamiento()
-		print 'Termina Cargar Entrenamiento'
-	else:
-		armarMatriz()
-	if in_entrenamiento:
-		print 'Comienza Entrenamiento'
-		entrenamiento()
-		print 'Termina Entrenamiento'
-	if in_guardarEntrenamiento:
-		print 'Comienza Guardar Entrenamiento'
-		guardarEntrenamiento()
-		print 'Termina Guardar Entrenamiento'
-	print 'Comienza Ciclo Completo'
-	armarMatrizActivaciones()
-	cicloCompleto()
-	print 'Termina Ciclo Completo'
-	print 'Comienza Armar Mapa'
-	armarMapaActivaciones()
-	print 'Termina Armar Mapa'
-	print 'Comienza Graficar'
+	fname = 'kohonen_'+'_'+str(m1)+'_'+str(m2)+'_'+str(dmin)+'_'+str(in_T)+'_'+str(in_inicio_validacion)+'_'+str(in_fin_validacion)
+	inicializarMatrices()
+	print 'Levantar y normalizar'
+	levantarYNormalizar()
+	print 'Termina de normalizar'
+	print 'Pre entrenamiento'
+	resultados = []
+	resultados = cicloCompleto()
 	graficar()
-	print 'Termina Graficar'
-
-#El numero de pasos de entrenamiento se debe fijar antes apriori, para 
-#calcular la tasa de convergencia de la funcion de vecindad y del learning right
+	entrenamientoCargado = cargarEntrenamiento()
+	if not(entrenamientoCargado):
+		entrenamiento()
+		guardarEntrenamiento()
+	print 'Post entrenamiento'
+	resultados = []
+	resultados = cicloCompleto()
+	graficar()
 
 if __name__ == '__main__':
 	main()

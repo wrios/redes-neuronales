@@ -16,10 +16,11 @@ from sklearn import svm
 from sklearn.metrics import confusion_matrix, accuracy_score
 
 in_m = 3
+datos = []
 Y = np.zeros((3,1))
 in_inicio_validacion = 0
 in_fin_validacion = 0
-in_metodo = 'Sanger'
+in_metodo = 'Oja'
 in_cargarEntrenamiento = False
 in_entrenamiento = True
 in_guardarEntrenamiento = True
@@ -29,17 +30,35 @@ dW = np.zeros((856,in_m))
 Xm = np.zeros((856,1))
 X = np.zeros((856,1))
 in_dataset = 'tp2_training_dataset.csv'
-fname = in_metodo+'_'+str(in_m)+'_'+str(in_T)
+in_train_dataset = in_dataset
+fname = in_metodo+'_'+str(in_T)
+
+def inicializarMatrices():
+	W = np.random.uniform( -0.1, 0.1, (856,in_m))
+	dW = np.zeros((856,in_m))
+	Xm = np.zeros((856,1))
+	X = np.zeros((856,1))
+
+def levantarYNormalizar():
+	global datos
+	i = 0
+	reader = csv.reader(open(in_train_dataset,'rb'))
+	for vector in reader:
+		temp = np.asarray(vector[1:]).reshape((856,1))
+		if (in_dataset != in_train_dataset):
+			datos.append(temp)
+		elif not(in_inicio_validacion <= i < in_fin_validacion):
+			datos.append(temp)
+		i += 1
 
 def epoca(n):
 	global W
 	global dW
 	global Y
 	e_actual = 0
-	reader = csv.reader(open(in_dataset,'rb'))
-	for vector in reader:
+	for dato in datos:
 		if not(int(in_inicio_validacion) <= e_actual <= int(in_fin_validacion)):
-			X[:] = np.asarray(vector[1:]).reshape((856,1))
+			X[:] = dato
 			Y[:] = np.dot(X.T,W).T
 			if in_metodo == 'Oja':
 				oja(n)
@@ -162,45 +181,68 @@ def checkFile(fname):
 	else:
 		return False
 
+
 def main():
-	global in_metodo
 	global in_dataset
-	global in_cargarEntrenamiento
-	global in_entrenamiento
-	global in_guardarEntrenamiento
+	global in_metodo
+	global in_T
 	global in_inicio_validacion
 	global in_fin_validacion
+	global fname
+	global datos
 	if len(sys.argv) > 1:
 		if sys.argv[1] == '-h' or sys.argv[1] == '--help':
-			print 'usage: python Oja-Sanger.py metodo dataset cargarEntrenamiento? entrenar? guardarEntrenamiento? inicio_validacion fin_validacion'
-			print 'los parametros bool se definen con 1 o 0, los de validacion con el inicio y final del segmento en int'
+			print 'los parametros disponibles aparecen en el readme junto con su explicacion'
 			print 'si no se especifica ningun parametro se usan los que estan por defecto en el codigo'
-			print 'el entrenamiento se guarda y carga dependiendo de los parametros in_T en el codigo y metodo e inicio / validacion de parametros'
+			print 'el entrenamiento se guarda y carga dependiendo de los parametros max_epocas inicio/fin_validacion'
 			return 0
-		else:
+		elif len(sys.argv) == 2:
+			in_dataset = sys.argv[1]
+			in_train_dataset = in_dataset
+		elif len(sys.argv) == 3:
+			in_metodo = sys.argv[1]
+			in_T = int(sys.argv[2])
+		elif len(sys.argv) == 4:
 			in_metodo = sys.argv[1]
 			in_dataset = sys.argv[2]
-			in_cargarEntrenamiento = sys.argv[3] == '1'
-			in_entrenamiento = sys.argv[4] == '1'
-			in_guardarEntrenamiento = sys.argv[5] == '1'
-			in_inicio_validacion = sys.argv[6]
-			in_fin_validacion = sys.argv[7]
-		print 'Pre entrenamiento'
-	fname = in_metodo+'_'+str(in_m)+'_'+str(in_T)+'_'+str(in_inicio_validacion)+'_'+str(in_fin_validacion)
+			in_train_dataset = in_dataset
+			in_train_dataset = sys.argv[3]
+#		elif len(sys.argv) == 5:
+#			in_metodo = sys.argv[1]
+#			in_dataset = sys.argv[2]
+#			in_train_dataset = sys.argv[3]
+#			in_T = int(sys.argv[4])
+		elif len(sys.argv) == 5:
+			in_metodo = sys.argv[1]
+			in_T = int(sys.argv[2])
+			in_inicio_validacion = int(sys.argv[3])
+			in_fin_validacion = int(sys.argv[4])
+		elif len(sys.argv) == 6:
+			in_metodo = sys.argv[1]
+			in_dataset = sys.argv[2]
+			in_train_dataset = in_dataset
+			in_T = int(sys.argv[3])
+			in_inicio_validacion = int(sys.argv[4])
+			in_fin_validacion = int(sys.argv[5])
+
+	fname = in_metodo+'_'+str(in_T)+'_'+str(in_inicio_validacion)+'_'+str(in_fin_validacion)
+	inicializarMatrices()
+	print 'Levantar y normalizar'
+	levantarYNormalizar()
+	print 'Termina de normalizar'
+	print 'Pre entrenamiento'
 	resultados = []
 	resultados = cicloCompleto()
-	entrenamientoCargado = cargarEntrenamiento()
 	graficar(resultados)
+	entrenamientoCargado = cargarEntrenamiento()
 	if not(entrenamientoCargado):
 		entrenamiento()
 		guardarEntrenamiento()
 	print 'Post entrenamiento'
 	resultados = []
 	resultados = cicloCompleto()
-	print "finaliza ciclo completo"
-	print "comienzo graficar scatter"
 	graficar(resultados)
-	print "finaliza graficar scatter"
+
 
 if __name__ == '__main__':
 	main()
