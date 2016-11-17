@@ -26,7 +26,6 @@ M = []
 Map = np.zeros((m1, m2))
 dmax = m1 #lo suficientemente grande para poder abarcar todas las neuronas y luego solo quede la ganadora
 dmin = 0.55 # hace que vaya mas lento o rapido el aprendizaje
-fname = 'kohonen_'+str(dmin)+'_'+str(TotalEpoca)
 
 in_inicio_validacion = 0
 in_fin_validacion = 0
@@ -34,6 +33,7 @@ in_cargarEntrenamiento = False
 in_entrenamiento = True
 in_guardarEntrenamiento = True
 in_dataset = 'tp2_training_dataset.csv'
+fname = 'kohonen_'+str(dmin)+'_'+str(TotalEpoca)+'_'+str(in_inicio_validacion)+'_'+str(in_fin_validacion)
 
 def learningRate(n):
 	lr = 0.05/np.power(n+16,1.8)
@@ -167,9 +167,12 @@ def cicloCompleto():
 		l += 1
 
 def graficar():
+	fig = plt.figure()
+	fig.suptitle('kohonen'+fname)
 	print Map
 	plt.matshow(Map)
-	plt.show()
+	plt.savefig('training/'+fname+'.png', format = 'png')
+	#plt.show()
 
 def most_common(L):
 	if len(L) > 0:
@@ -207,6 +210,7 @@ def checkFile(fname):
 
 
 def main():
+	global fname
 	global dmin
 	global in_dataset
 	global TotalEpoca
