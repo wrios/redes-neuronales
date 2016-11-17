@@ -70,7 +70,7 @@ def gaussiana(n):
 	return r 	
 
 def sigma(n):
-	dr = (m1-1)/(n*m1)
+	dr = (m1-1)/(TotalEpoca*m1)
 	sigma = m1/(1+(n*m1*dr))	
 	return sigma 
 
