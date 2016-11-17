@@ -16,7 +16,7 @@ from numpy import linalg as LA
 import os.path
 import matplotlib.pylab as plt
 
-TotalEpoca = 550
+TotalEpoca = 3000
 m1 = 8
 m2 = 8
 W = []
@@ -223,52 +223,9 @@ def main():
 	global in_guardarEntrenamiento
 	global in_inicio_validacion
 	global in_fin_validacion
-	if len(sys.argv) > 1:
-		if sys.argv[1] == '-h' or sys.argv[1] == '--help':
-			print 'usage: python kohonen.py dataset cargarEntrenamiento? entrenar? guardarEntrenamiento? inicio_validacion fin_validacion'
-			print 'los parametros bool se definen con 1 o 0, los de validacion con el inicio y final del segmento en int'
-			print 'si no se especifica ningun parametro se usan los que estan por defecto en el codigo'
-			print 'el entrenamiento se guarda y carga dependiendo de los parametros TotalEpoca en el codigo e inicio / validacion de parametros'
-			return 0
-		else:
-			in_dataset = sys.argv[1]
-			#dmin es para la funcion gaussiana, velocidad con la que decrece el vecindario(no explicitamente,
-			# ya que hay otros parametros involucrados )
-			dmin = float(sys.argv[2])
-			#cantidad total de epocas
-			TotalEpoca = int(sys.argv[3])
-			in_cargarEntrenamiento = sys.argv[4] == '1'
-			in_entrenamiento = sys.argv[5] == '1'
-			in_guardarEntrenamiento = sys.argv[6] == '1'
-			in_inicio_validacion = sys.argv[7]
-			in_fin_validacion = sys.argv[8]
-	fname = 'kohonen_'+str(dmin)+'_'+str(TotalEpoca)+'_'+str(in_inicio_validacion)+'_'+str(in_fin_validacion)
 
-	if in_cargarEntrenamiento:
-		print 'Comienza Cargar Entrenamiento'
-		cargarEntrenamiento()
-		print 'Termina Cargar Entrenamiento'
-	else:
-		armarMatriz()
-	if in_entrenamiento:
-		print 'Comienza Entrenamiento'
-		entrenamiento()
-		print 'Termina Entrenamiento'
-	if in_guardarEntrenamiento:
-		print 'Comienza Guardar Entrenamiento'
-		guardarEntrenamiento()
-		print 'Termina Guardar Entrenamiento'
-	print 'Comienza Ciclo Completo'
-	armarMatrizActivaciones()
-	cicloCompleto()
-	print 'Termina Ciclo Completo'
-	print 'Comienza Armar Mapa'
-	armarMapaActivaciones()
-	print 'Termina Armar Mapa'
-	print 'Comienza Graficar'
-	graficar()
-	print 'Termina Graficar'
-
+	for n in range(0, TotalEpoca):
+		print sigma(n),n
 #El numero de pasos de entrenamiento se debe fijar antes apriori, para 
 #calcular la tasa de convergencia de la funcion de vecindad y del learning right
 
