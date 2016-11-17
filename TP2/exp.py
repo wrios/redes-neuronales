@@ -1,5 +1,16 @@
 import os
 
+
+print 'bloque 0 '
+print 'dmin,0.05'
+os.system("python kohonen.py tp2_training_dataset.csv 0.05 400 0 1 1 0 0")
+os.system("python kohonen.py tp2_training_dataset.csv 0.05 600 0 1 1 0 0")
+os.system("python kohonen.py tp2_training_dataset.csv 0.05 800 0 1 1 0 0")
+os.system("python kohonen.py tp2_training_dataset.csv 0.05 1000 0 1 1 0 0")
+os.system("python kohonen.py tp2_training_dataset.csv 0.05 1200 0 1 1 0 0")
+os.system("python kohonen.py tp2_training_dataset.csv 0.05 1400 0 1 1 0 0")
+
+
 print 'bloque 1 '
 print 'dmin,0.15'
 os.system("python kohonen.py tp2_training_dataset.csv 0.15 400 0 1 1 0 0")
