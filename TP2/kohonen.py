@@ -13,10 +13,12 @@ import numpy as np
 import ast
 import scipy.io
 from numpy import linalg as LA
+import os.path
+import matplotlib.pylab as plt
 
-TotalEpoca = 2000
-m1 = 12
-m2 = 12
+TotalEpoca = 500
+m1 = 14
+m2 = 14
 W = []
 X = np.ones((856,1))
 Y = np.zeros((856,1))
@@ -24,6 +26,7 @@ M = []
 Map = np.zeros((m1, m2))
 dmax = m1 #lo suficientemente grande para poder abarcar todas las neuronas y luego solo quede la ganadora
 dmin = 0.55 # hace que vaya mas lento o rapido el aprendizaje
+fname = 'kohonen_'+str(dmin)+'_'+str(TotalEpoca)
 
 in_inicio_validacion = 0
 in_fin_validacion = 0
@@ -62,7 +65,7 @@ def armarMapaActivaciones():
 
 def gaussiana(n):
 	r =  (dmax*((dmin/dmax)**(n/TotalEpoca)))
-	if r < 1 and r > 0.3:
+	if r < 1 and r > 0.4:
 		r = 1
 	return r 	
 
@@ -178,19 +181,35 @@ def most_common(L):
 		return -1
 
 def guardarEntrenamiento():
-	outfile = open('entrenamiento_Kohonen'+str(TotalEpoca)+'_'+str(in_inicio_validacion)+'_'+str(in_fin_validacion), 'w')
-	np.save(outfile, W)
-	outfile.close()
+	if not(checkFile('training/'+fname)):
+		print 'Guardando Entrenamiento'
+		outfile = open('training/'+fname, 'w')
+		np.save(outfile, W)
+		outfile.close()
+		print 'Entrenamiento Guardado'
 
 def cargarEntrenamiento():
 	global W
-	infile = open('entrenamiento_Kohonen'+str(TotalEpoca)+'_'+str(in_inicio_validacion)+'_'+str(in_fin_validacion), 'r')
-	W[:] = np.load(infile)
-	infile.close()
+	if checkFile('training/'+fname):
+		print 'Cargando Entrenamiento'
+		infile = open('training/'+fname, 'r')
+		W[:] = np.load(infile)
+		infile.close()
+		print 'Entrenamiento Cargado'
+		return True
+	return False
+
+def checkFile(fname):
+	if os.path.exists(fname):
+		return os.path.isfile(fname)
+	else:
+		return False
 
 
 def main():
+	global dmin
 	global in_dataset
+	global TotalEpoca
 	global in_cargarEntrenamiento
 	global in_entrenamiento
 	global in_guardarEntrenamiento
@@ -205,11 +224,18 @@ def main():
 			return 0
 		else:
 			in_dataset = sys.argv[1]
-			in_cargarEntrenamiento = sys.argv[2] == '1'
-			in_entrenamiento = sys.argv[3] == '1'
-			in_guardarEntrenamiento = sys.argv[4] == '1'
-			in_inicio_validacion = sys.argv[5]
-			in_fin_validacion = sys.argv[6]
+			#dmin es para la funcion gaussiana, velocidad con la que decrece el vecindario(no explicitamente,
+			# ya que hay otros parametros involucrados )
+			dmin = float(sys.argv[2])
+			#cantidad total de epocas
+			TotalEpoca = int(sys.argv[3])
+			in_cargarEntrenamiento = sys.argv[4] == '1'
+			in_entrenamiento = sys.argv[5] == '1'
+			in_guardarEntrenamiento = sys.argv[6] == '1'
+			in_inicio_validacion = sys.argv[7]
+			in_fin_validacion = sys.argv[8]
+	fname = 'kohonen_'+str(dmin)+'_'+str(TotalEpoca)+'_'+str(in_inicio_validacion)+'_'+str(in_fin_validacion)
+
 	if in_cargarEntrenamiento:
 		print 'Comienza Cargar Entrenamiento'
 		cargarEntrenamiento()
