@@ -16,17 +16,15 @@ from numpy import linalg as LA
 import os.path
 import matplotlib.pylab as plt
 
-in_T = 500
-m1 = 15
-m2 = 15
+in_T = 600
+m1 = 10
+m2 = 10
 W = []
 X = np.ones((856,1))
 Y = np.zeros((856,1))
 M = []
 datos = []
 Map = np.zeros((m1, m2))
-dmax = m1 #lo suficientemente grande para poder abarcar todas las neuronas y luego solo quede la ganadora
-dmin = 0.55 # hace que vaya mas lento o rapido el aprendizaje
 
 in_inicio_validacion = 0
 in_fin_validacion = 0
@@ -35,7 +33,7 @@ in_entrenamiento = True
 in_guardarEntrenamiento = True
 in_dataset = 'tp2_training_dataset.csv'
 in_train_dataset = in_dataset
-fname = 'kohonen_'+'_'+str(m1)+'_'+str(m2)+'_'+str(dmin)+'_'+str(in_T)+'_'+str(in_inicio_validacion)+'_'+str(in_fin_validacion)
+fname = 'kohonen_'+'_'+str(m1)+'_'+str(m2)+'_'+str(in_T)+'_'+str(in_inicio_validacion)+'_'+str(in_fin_validacion)
 
 def inicializarMatrices():
 	armarMatriz()
@@ -47,7 +45,7 @@ def inicializarMatrices():
 	#return lr
 
 def learningRate(n):
-	lr = 0.001 * ((in_T - n)/in_T)
+	lr = 0.001/(np.power(n+1,0.5))
 	return lr
 
 def levantarYNormalizar():
@@ -64,9 +62,9 @@ def levantarYNormalizar():
 
 def armarMatrizActivaciones():
 	global M
-	for i in xrange(0,m1):
+	for i in range(0,m1):
 		fila = []
-		for j in xrange(0,m2):
+		for j in range(0,m2):
 			fila.append([])
 		M.append(fila)
 
@@ -82,15 +80,10 @@ def armarMapaActivaciones():
 	global M
 	global Map
 	Map = np.zeros((m1, m2))
-	for i in xrange(0,m1):
-		for j in xrange(0,m2):
+	for i in range(0,m1):
+		for j in range(0,m2):
 			Map[i][j] = most_common(M[i][j])
 
-def gaussiana(n):
-	r =  (dmax*((dmin/dmax)**(n/in_T)))
-	if r < 1 and r > 0.4:
-		r = 1
-	return r
 
 def sigma(n):
 	dr = (m1-1)/(in_T*m1)
@@ -100,20 +93,20 @@ def sigma(n):
 def armarMatriz():
 	global W
 	W = []
-	for i in xrange(0,m1):
+	for i in range(0,m1):
 		fila = []
-		for j in xrange(0,m2):
+		for j in range(0,m2):
 			fila.append(np.random.uniform( -0.1, 0.1, (856,1)))
 		W.append(fila)
 
 def activar():
 	global Y
-	norm = np.linalg.norm(W[0][0] - X)
-	Y[:] = (W[0][0] - X)
+	norm = np.linalg.norm(X - W[0][0])
+	Y[:] = (X - W[0][0] )
 	i = 0
 	j = 0
-	for i_t in xrange(0,m1):
-		for j_t in xrange(0,m2):
+	for i_t in range(0,m1):
+		for j_t in range(0,m2):
 			Y_t = (X - W[i_t][j_t] )
 			norm_t = np.linalg.norm(Y_t)
 			if norm_t < norm:
@@ -123,30 +116,27 @@ def activar():
 				j = j_t
 	return i, j, Y_t
 
-def rangoVecindad(n, i, j, i_t ,j_t,sigma):
+def gaussiana(n, i, j, i_t ,j_t,sigma):
 	return np.exp((-((np.power(i-i_t,2)+(np.power(j-j_t,2)))/(2*(np.power(sigma,2))))))
 
 def vecindad(n, i, j, Y_t):
 	r = [] 
-	for i_t in range(int(i-(sigma(n)/2)),int(i+(sigma(n)/2)+1)):
-		for j_t in range(int(j-(sigma(n)/2)),int(1+i+(sigma(n)/2))):
-			x = []
-			t1 = i_t
-			t2 = j_t
-			if t1 < 0:
-				t1 += m1
-			if t1 > m1-1:
-				t1 = t1%(m1-1)	
-			if t2 < 0:
-				t2 += m1
-			if t2 > m1-1:
-				t2 = t2%(m1-1)	 	
-		#	print rangoVecindad(n, i, j, t1, t2)
-			if not(i == t1 and j == t2):
-				x = [t1, t2, (X - W[t1][t2])*rangoVecindad(n, i, j, t1, t2, sigma(n))]
-			else:
-				x = [t1, t2, Y_t] 
-			r.append(x)		
+	if sigma(n)> 1.2:
+		for i_t in range(i-int(sigma(n)*0.5)-1,2+i+int(sigma(n)*0.5)):
+			for j_t in range(j-int(sigma(n)*0.5)-1,2+j+int(sigma(n)*0.5)):	
+				t1 = i_t
+				t2 = j_t
+				t1 = (t1+m1)%(m1)
+				t2 = (t2+m2)%(m2)
+				if not(t1 == i and t2 == j):
+					x = [t1, t2, (X - W[t1][t2])*gaussiana(n, i, j, t1, t2, sigma(n))]	
+					r.append(x)
+				elif i_t == i and j_t == j:
+					x = [i_t, j_t, Y_t] 
+					r.append(x)			
+	else:
+		x = [i, j, Y_t] 
+		r.append(x)	
 	return r
 
 def correccion(vecindades, n):
@@ -155,9 +145,9 @@ def correccion(vecindades, n):
 	for vs in vecindades:
 		for v in vs:
 			i, j, delta = v	
-			W[i][j] += (learningRate(n) * delta)
+			W[i][j] = (learningRate(n) * delta) + W[i][j] 
 			e += np.linalg.norm(learningRate(n) * delta)
-	print e, n, sigma(n)		
+	print e, n, sigma(n), learningRate(n)		
 
 def epoca(n):
 	global X
@@ -165,14 +155,16 @@ def epoca(n):
 	global Y
 	global datos
 	vecindades = []
+	o = 0
 	reader = csv.reader(open(in_dataset,'rb'))
 	for vector in reader:
-		#if not(int(in_inicio_validacion) <= e_actual <= int (in_fin_validacion)):
 		X[:] = np.asarray(vector[1:]).reshape((856,1))
 		i, j, Y_t = activar()
 		v = vecindad(n, i, j, Y_t)
 		vecindades.append(v)
+	print 'Vecindad ', len(vecindades[0])	
 	correccion(vecindades, n)
+	
 
 def entrenamiento():
 	n = 1
@@ -180,7 +172,6 @@ def entrenamiento():
 		progress(n, in_T)
 		epoca(n)
 		n += 1
-#		print 'epoca',n
 
 def cicloCompleto():
 	global X
@@ -190,7 +181,6 @@ def cicloCompleto():
 	l = 1
 	reader = csv.reader(open(in_dataset,'rb'))
 	for vector in reader:
-		#if not(int(in_inicio_validacion) <= e_actual <= int (in_fin_validacion)):
 		X[:] = np.asarray(vector[1:]).reshape((856,1))
 		i, j, Y_t = activar()
 		M[i][j].append(vector[0])
@@ -203,7 +193,7 @@ def graficar():
 	fig.suptitle('kohonen'+fname)
 	print Map
 	plt.matshow(Map)
-	#plt.savefig('training/'+fname+'.png', format = 'png')
+	plt.savefig('training/'+fname+'.png', format = 'png')
 	plt.show()
 
 def most_common(L):
@@ -287,7 +277,7 @@ def main():
 			in_inicio_validacion = int(sys.argv[5])
 			in_fin_validacion = int(sys.argv[6])
 
-	fname = 'kohonen_'+'_'+str(m1)+'_'+str(m2)+'_'+str(dmin)+'_'+str(in_T)+'_'+str(in_inicio_validacion)+'_'+str(in_fin_validacion)
+	fname = 'kohonen_'+'_'+str(m1)+'_'+str(m2)+'_'+str(in_T)+'_'+str(in_inicio_validacion)+'_'+str(in_fin_validacion)
 	inicializarMatrices()
 	print 'Levantar y normalizar'
 	levantarYNormalizar()
@@ -295,7 +285,7 @@ def main():
 	print 'Pre entrenamiento'
 	resultados = []
 	resultados = cicloCompleto()
-	graficar()
+	#graficar()
 	entrenamientoCargado = cargarEntrenamiento()
 	if not(entrenamientoCargado):
 		entrenamiento()
